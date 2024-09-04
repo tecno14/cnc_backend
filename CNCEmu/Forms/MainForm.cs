@@ -1,4 +1,5 @@
 ﻿using BlazeLibWV;
+using CNCEmu.Services.Network;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,9 +7,9 @@ using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
-namespace CNCEmu
+namespace CNCEmu.Forms
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         public readonly object _sync = new object();
         public List<Blaze.Packet> packets = new List<Blaze.Packet>();
@@ -17,7 +18,7 @@ namespace CNCEmu
         public int inlistcount;
         public int clientcount;
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
         }
@@ -385,7 +386,7 @@ namespace CNCEmu
 
         private void playerProfileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Form2 f = new Form2();
+            ProfileForm f = new ProfileForm();
             f.ShowDialog();
         }
 

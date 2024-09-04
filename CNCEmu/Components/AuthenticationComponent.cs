@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BlazeLibWV;
 using static BlazeLibWV.Blaze;
 using System.Net.Sockets;
+using CNCEmu.Services.Network;
 
 namespace CNCEmu
 {

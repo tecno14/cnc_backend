@@ -1,6 +1,6 @@
-﻿namespace CNCEmu
+﻿namespace CNCEmu.Forms
 {
-    partial class Form1
+    partial class MainForm
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -17,7 +17,7 @@
 
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.serverToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.SIAbout = new System.Windows.Forms.ToolStripMenuItem();
@@ -107,7 +107,7 @@
             // 
             // SIAbout
             // 
-            this.SIAbout.Image = global::CNCEmu.Properties.Resources.external;
+            this.SIAbout.Image = global::CNCEmu.Properties.Resources.ExternalLink;
             this.SIAbout.Name = "SIAbout";
             this.SIAbout.Size = new System.Drawing.Size(107, 22);
             this.SIAbout.Text = "About";
@@ -193,7 +193,7 @@
             // 
             // SIHelp
             // 
-            this.SIHelp.Image = global::CNCEmu.Properties.Resources.external;
+            this.SIHelp.Image = global::CNCEmu.Properties.Resources.ExternalLink;
             this.SIHelp.Name = "SIHelp";
             this.SIHelp.Size = new System.Drawing.Size(60, 20);
             this.SIHelp.Text = "Help";

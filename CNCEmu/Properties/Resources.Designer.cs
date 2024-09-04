@@ -63,9 +63,9 @@ namespace CNCEmu.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap external {
+        internal static System.Drawing.Bitmap ExternalLink {
             get {
-                object obj = ResourceManager.GetObject("external", resourceCulture);
+                object obj = ResourceManager.GetObject("ExternalLink", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
