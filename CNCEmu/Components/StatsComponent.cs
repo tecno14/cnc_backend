@@ -17,7 +17,7 @@ namespace CNCEmu
                 case 0x00:
                     break;
                 default:
-                    Logger.Log("[CLNT] #" + pi.userId + " Component: [" + p.Component + "] # Command: " + p.Command + " [at] " + " [STATS] " + " not found.", System.Drawing.Color.Red);
+                    Logger.Log("[CLNT] #" + pi.UserId + " Component: [" + p.Component + "] # Command: " + p.Command + " [at] " + " [STATS] " + " not found.", System.Drawing.Color.Red);
                     break;
             }
         }

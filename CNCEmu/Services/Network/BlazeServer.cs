@@ -1,206 +1,324 @@
 ﻿using BlazeLibWV;
+using CNCEmu.Constants;
+using CNCEmu.Models;
+using CNCEmu.Services.Logger;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Windows.Forms;
+using System.Threading.Tasks;
 
 namespace CNCEmu.Services.Network
 {
-    public static class BlazeServer
+    public class BlazeServer
     {
-        public static readonly object _sync = new object();
-        public static bool _exit;
-        public static bool _isRunning = false;
-        public static RichTextBox box = null;
-        public static TcpListener lBlaze = null;
-        public static int idCounter;
-        public static List<PlayerInfo> allClients = new List<PlayerInfo>();
+        private Task _ServerTask;
+        private readonly object _ServerStatusLock = new object();
+        private readonly object _UserIdLock = new object();
+        private readonly Random _Random = new Random();
+        private readonly List<PlayerInfo> _PlayersInfo = new List<PlayerInfo>();
 
-        public static void Start()
+        private CancellationTokenSource _TokenSource;
+
+        public TimeSpan MaximumTimeout { get; private set; }
+
+        public int MaximumPlayers { get; private set; }
+
+        public int Port { get; private set; }
+
+        public IPAddress LocalAddress { get; private set; }
+
+        public LogService Logger { get; private set; } = new LogService(nameof(BlazeServer));
+
+        public bool IsRunning => _ServerTask != default && _ServerTask.Status == TaskStatus.Running;
+
+        /// <summary>
+        /// Singleton instance
+        /// </summary>
+        public static BlazeServer Instance { get; private set; } = new BlazeServer();
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="maximumTimeout"></param>
+        /// <param name="maximumPlayers"></param>
+        /// <param name="port"></param>
+        public BlazeServer(
+            TimeSpan maximumTimeout = default,
+            int maximumPlayers = -1,
+            int port = -1,
+            IPAddress localAddress = null)
         {
-            SetExit(false);
-            _isRunning = true;
-            Log("Starting Blaze...");
-            new Thread(tBlazeMain) { IsBackground = true }.Start();
-            idCounter = 1;
-            for (int i = 0; i < 10; i++)
+            MaximumTimeout = maximumTimeout != default ? maximumTimeout : General.BlazerMaximumTimeout;
+            MaximumPlayers = maximumPlayers > 0 ? maximumPlayers : General.BlazerMaximumPlayers;
+            Port = port > 0 ? port : ProviderInfo.BlazePort;
+            LocalAddress = localAddress ?? IPAddress.Parse(ProviderInfo.BackendIP);
+        }
+
+        /// <summary>
+        /// Start the server
+        /// </summary>
+        public void Start()
+        {
+            lock (_ServerStatusLock)
             {
-                Thread.Sleep(10);
-                Application.DoEvents();
+                if (_TokenSource != default)
+                {
+                    Logger.Write(nameof(Start), "Server is already running", LogType.WARN);
+                    return;
+                }
+
+                _TokenSource = new CancellationTokenSource();
+                _ServerTask = Task.Run(Server);
             }
         }
 
-        public static void Stop()
+        /// <summary>
+        /// Stop the server
+        /// </summary>
+        public void Stop()
         {
-            Log("Backend stopping...");
-            if (lBlaze != null) lBlaze.Stop();
-            SetExit(true);
-            Log("Done.");
+            lock (_ServerStatusLock)
+            {
+                Logger.Write(nameof(Stop), "Stopping the server...", LogType.WARN);
+
+                if (_TokenSource == null)
+                {
+                    Logger.Write(nameof(Stop), "Server is not running", LogType.WARN);
+                    return;
+                }
+
+                // Stop the server
+                _TokenSource.Cancel();
+
+                // Wait for the server to stop
+                _ServerTask.Wait();
+
+                // Reset the token
+                _TokenSource = default;
+                Logger.Write(nameof(Stop), "Server stopped", LogType.WARN);
+            }
         }
 
-        public static void tBlazeMain(object obj)
+        /// <summary>
+        /// Main server code
+        /// </summary>
+        /// <returns></returns>
+        private async Task Server()
         {
             try
             {
-                Log("[MAIN] Blaze starting...");
-                Profiles.Refresh();
-                lBlaze = new TcpListener(IPAddress.Parse(ProviderInfo.backendIP), 3659);
-                Log("[MAIN] Blaze bound to port: 3659");
-                lBlaze.Start();
-                Log("[MAIN] Blaze listening...");
-                TcpClient client;
-                while (!GetExit())
-                {
-                    client = lBlaze.AcceptTcpClient();
-                    new Thread(tBlazeClientHandler) { IsBackground = true }.Start(client);
-                }
+                Logger.Write(nameof(Server), $"Starting the server ... (port: {Port})", LogType.WARN);
+
+                var server = new TcpListener(LocalAddress, Port);
+                server.Start();
+                server.BeginAcceptTcpClient(
+                    new AsyncCallback(ClientHandler),
+                    new State() { Server = server, Token = _TokenSource.Token });
+
+                Logger.Write(nameof(Server), "Server is listening for connections...", LogType.WARN);
+
+                // Wait forever until cancelation
+                await Task.Delay(Timeout.Infinite, _TokenSource.Token);
+
+                // Shutdown the server
+                Logger.Write(nameof(Server), "Server stopping ...", LogType.WARN);
+                server.Stop();
+                Logger.Write(nameof(Server), "Server stopped, reason: server token was cancelled", LogType.WARN);
             }
             catch (Exception ex)
             {
-                LogError("MAIN", ex);
+                // Ignore the exception if the token is cancelled
+                if (_TokenSource.IsCancellationRequested)
+                    return;
+                Logger.Write(nameof(Server), "Server stopped due to an error", LogType.WARN);
+                Logger.Write(nameof(Server), ex);
+            }
+            finally
+            {
+                // Reset the token
+                _TokenSource = default;
+                Logger.Write(nameof(Server), "Server stopped", LogType.WARN);
             }
         }
 
-        public static void tBlazeClientHandler(object obj)
+        /// <summary>
+        /// Get a valid new user id
+        /// </summary>
+        /// <returns></returns>
+        private int GetValidNewUserId()
         {
-            TcpClient client = (TcpClient)obj;
-            NetworkStream ns = client.GetStream();
-            PlayerInfo pi = new PlayerInfo();
-            allClients.Add(pi);
-            pi.userId = idCounter++;
-            if (idCounter > 100)
-                idCounter = 0;
-            pi.exIp = 0;
-            pi.ns = ns;
-            pi.timeout = new System.Diagnostics.Stopwatch();
-            pi.timeout.Start();
-            Log("[CLNT] #" + pi.userId + " Handler started");
-            //try
-            //{
-                while (!GetExit())
+            lock (_UserIdLock)
+                while (true)
                 {
-                    byte[] data = Helper.ReadContentTCP(ns);
-                    if (data != null && data.Length != 0)
-                        ProcessPackets(data, pi, ns);
-                    Thread.Sleep(1);
-                    if (pi.timeout.ElapsedMilliseconds > 5000 * 60)
-                        throw new Exception("Client timed out!");
+                    int userId = _Random.Next(1, MaximumPlayers + 1);
+                    if (!_PlayersInfo.Exists(x => x.UserId == userId))
+                        return userId;
                 }
-            //}
-            //catch (Exception ex)
-            //{
-            //    LogError("CLNT", ex, "Handler " + pi.userId);
-            //    throw new Exception(ex.StackTrace);
-            //}
-            client.Close();
-            Log("[CLNT] #" + pi.userId + " Client disconnected", System.Drawing.Color.Orange);
-            BlazeServer.allClients.Remove(pi);
         }
 
-        public static void ProcessPackets(byte[] data, PlayerInfo pi, NetworkStream ns)
+        /// <summary>
+        /// Callback for when client connects
+        /// </summary>
+        /// <param name="ar">State of client connection</param>
+        /// <exception cref="Exception"></exception>
+        private void ClientHandler(IAsyncResult ar)
         {
-            List<Blaze.Packet> packets = Blaze.FetchAllBlazePackets(new MemoryStream(data));
-
-            if (Config.MakePacket.ToLower() == "true")
-            {
-                Logger.LogPacket("CLNT", Convert.ToInt32(pi.userId), data);
-            }
-
-            foreach (Blaze.Packet p in packets)
-            {
-                Log("[CLNT] #" + pi.userId + " " + Blaze.PacketToDescriber(p),System.Drawing.Color.Gray);
-
-                switch (p.Component)
-                {
-                    case 0x1:
-                        AuthenticationComponent.HandlePacket(p, pi, ns);
-                        break;
-                    case 0x4:
-                        GameManagerComponent.HandlePacket(p, pi, ns);
-                        break;
-                    case 0x7:
-                        StatsComponent.HandlePacket(p, pi, ns);
-                        break;
-                    case 0x9:
-                        UtilComponent.HandlePacket(p, pi, ns);
-                        break;
-                    case 0x19:
-                        AssociationListsComponent.HandlePacket(p, pi, ns);
-                        break;
-                    case 0x23:
-                        AccountsComponent.HandlePacket(p, pi, ns);
-                        break;
-                    case 0x801:
-                        RSPComponent.HandlePacket(p, pi, ns);
-                        break;
-                    case 0x803:
-                        InventoryComponent.HandlePacket(p, pi, ns);
-                        break;
-                    case 0x7802:
-                        UserSessionsComponent.HandlePacket(p, pi, ns);
-                        break;
-                       default:
-                        Log("[CLNT] #" + pi.userId + " Component: " + p.Component  + " not found.", System.Drawing.Color.Red);
-                        break;
-                }
-            }
-        }
-
-        public static void SetExit(bool state)
-        {
-            lock (_sync)
-            {
-                _exit = state;
-            }
-        }
-
-        public static bool GetExit()
-        {
-            bool result;
-            lock (_sync)
-            {
-                result = _exit;
-            }
-            return result;
-        }
-
-        public static void Log(string s, object color = null)
-        {
-            if (box == null) return;
+            var playerInfo = default(PlayerInfo);
             try
             {
-                box.Invoke(new Action(delegate
+                var state = (State)ar.AsyncState;
+                var server = state.Server;
+                var client = server.EndAcceptTcpClient(ar);
+                var ns = client.GetStream();
+                playerInfo = new PlayerInfo
                 {
-                    string stamp = DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToLongTimeString() + " : ";
-                    Color c;
-                    if (color != null)
-                        c = (Color)color;
-                    else
-                        c = Color.Black;
-                    box.SelectionStart = box.TextLength;
-                    box.SelectionLength = 0;
-                    box.SelectionColor = c;
-                    box.AppendText(stamp + s + "\n");
-                    BackendLog.Write(stamp + s + "\n");
-                    box.SelectionColor = box.ForeColor;
-                    box.ScrollToCaret();
-                }));
+                    UserId = GetValidNewUserId(),
+                    NetworkStream = ns,
+                    ExIp = 0, // todo: is this supposed to be client ip??                
+                    Timeout = Stopwatch.StartNew(),
+                };
+                
+                // Add player to players list
+                _PlayersInfo.Add(playerInfo);
+
+                Logger.Write(nameof(ClientHandler), $"Player #{playerInfo.UserId} connected");
+
+                // todo: siperate timeout checking from packet processing may improve performance if processing code get improved (as I think !!)
+                while (!state.Token.IsCancellationRequested)
+                {
+                    // Check Timeout
+                    if (playerInfo.Timeout.Elapsed > MaximumTimeout)
+                        throw new Exception("Client timed out!");
+                    playerInfo.Timeout.Restart();
+
+                    // Process packets
+                    ProcessPackets(Helper.ReadContentTCP(ns), playerInfo, ns);
+                }
+
+                client.Close();
+                Logger.Write(nameof(ClientHandler), $"Player #{playerInfo.UserId} disconnected, reason: Server stopped");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Write(nameof(ClientHandler), $"Player #{playerInfo?.UserId} disconnected, reason: due to an error", LogType.WARN);
+                Logger.Write(nameof(ClientHandler), ex);
+            }
+            finally
+            {
+                // Remove player from players list
+                if (playerInfo != null && _PlayersInfo.Contains(playerInfo))
+                    _PlayersInfo.Remove(playerInfo);
+            }
         }
 
-        public static void LogError(string who, Exception e, string cName = "")
+        /// <summary>
+        /// Process packets sent from client connection
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="playerInfo"></param>
+        /// <param name="ns"></param>
+        public void ProcessPackets(byte[] data, PlayerInfo playerInfo, NetworkStream ns)
         {
-            string result = "";
-            if (who != "") result = "[" + who + "] " + cName + " ERROR: ";
-            result += e.Message;
-            if (e.InnerException != null)
-                result += " - " + e.InnerException.Message;
-            Log(result);
+            if (data == null || data.Length == 0)
+                return;
+
+            if (Config.MakePacket.ToLower() == "true")
+                CNCEmu.Logger.LogPacket("CLNT", Convert.ToInt32(playerInfo.UserId), data);
+
+            // Process all packets
+            foreach (var packet in Blaze.FetchAllBlazePackets(new MemoryStream(data)))
+            {
+                Logger.Write(nameof(ProcessPackets), $"Player #{playerInfo.UserId} sent: {Blaze.PacketToDescriber(packet)}");
+
+                switch (packet.Component)
+                {
+                    case 0x1:
+                        AuthenticationComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    case 0x4:
+                        GameManagerComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    case 0x7:
+                        StatsComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    case 0x9:
+                        UtilComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    case 0x19:
+                        AssociationListsComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    case 0x23:
+                        AccountsComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    case 0x801:
+                        RSPComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    case 0x803:
+                        InventoryComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    case 0x7802:
+                        UserSessionsComponent.HandlePacket(packet, playerInfo, ns);
+                        break;
+                    default:
+                        Logger.Write(nameof(ProcessPackets), $"Player #{playerInfo.UserId} sent unknown packet component: ({packet.Component})", LogType.WARN);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Temporal logging function to be compatible with old use
+        /// Todo: replace all what use this
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="color"></param>
+        [Obsolete]
+        public static void Log(string s, Color? color = default)
+        {
+            BlazeServer.Instance.Logger.Write(s, color == default ? LogType.INFO : color == Color.Red ? LogType.ERRR : LogType.WARN);
+        }
+
+        /// <summary>
+        /// Temporal logging function to be compatible with old use
+        /// Todo: replace all what use this
+        /// </summary>
+        /// <param name="who"></param>
+        /// <param name="e"></param>
+        /// <param name="cName"></param>
+        [Obsolete]
+        public static void LogError(string who, Exception e)
+        {
+            BlazeServer.Instance.Logger.Write(who, e);
+        }
+
+        [Obsolete]
+        public static void RemovePlayer(long userId)
+        {
+            BlazeServer.Instance._PlayersInfo.RemoveAll(p => p.UserId == userId);
+        }
+
+        [Obsolete]
+        public static PlayerInfo GetServerInfo()
+        {
+            return BlazeServer.Instance._PlayersInfo.FirstOrDefault(p => p.IsServer);
+        }
+
+        [Obsolete]
+        public static PlayerInfo GetPlayerById(long userId)
+        {
+            return BlazeServer.Instance._PlayersInfo.FirstOrDefault(p => p.UserId == userId);
+        }
+
+        [Obsolete]
+        public static List<PlayerInfo> GetPlayers()
+        {
+            return BlazeServer.Instance._PlayersInfo;
         }
     }
 }

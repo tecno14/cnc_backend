@@ -7,6 +7,8 @@ using BlazeLibWV;
 using static BlazeLibWV.Blaze;
 using System.Net.Sockets;
 using CNCEmu.Services.Network;
+using CNCEmu.Models;
+using CNCEmu.Services;
 
 namespace CNCEmu
 {
@@ -37,7 +39,7 @@ namespace CNCEmu
                     logout(p, pi, ns);
                     break;
                 default:
-                    Logger.Log("[CLNT] #" + pi.userId + " Component: [" + p.Component + "] # Command: " + p.Command + " [at] " + " [AUTHENTICATIONCOMP] " + " not found.", System.Drawing.Color.Red);
+                    Logger.Log("[CLNT] #" + pi.UserId + " Component: [" + p.Component + "] # Command: " + p.Command + " [at] " + " [AUTHENTICATIONCOMP] " + " not found.", System.Drawing.Color.Red);
                     break;
             }
         }
@@ -56,10 +58,10 @@ namespace CNCEmu
 
             List<Blaze.Tdf> SESS = new List<Blaze.Tdf>();
 
-            SESS.Add(Blaze.TdfInteger.Create("BUID", pi.userId)); //BlazeUserID
+            SESS.Add(Blaze.TdfInteger.Create("BUID", pi.UserId)); //BlazeUserID
             SESS.Add(Blaze.TdfString.Create("KEY", "SessionKey_1337"));
             SESS.Add(Blaze.TdfString.Create("MAIL", "cnc-2013-pc@ea.com"));
-            SESS.Add(Blaze.TdfInteger.Create("UID\0", pi.userId));
+            SESS.Add(Blaze.TdfInteger.Create("UID\0", pi.UserId));
             SESS.Add(Blaze.TdfInteger.Create("FRSC", 0));
             SESS.Add(Blaze.TdfInteger.Create("FRST", 0));
             SESS.Add(Blaze.TdfInteger.Create("LLOG", 1403663841));
@@ -67,9 +69,9 @@ namespace CNCEmu
             Result.Add(Blaze.TdfStruct.Create("SESS", SESS));
 
             List<Blaze.Tdf> PDTL = new List<Blaze.Tdf>();
-            PDTL.Add(Blaze.TdfString.Create("DSNM", pi.profile.name));
+            PDTL.Add(Blaze.TdfString.Create("DSNM", pi.Profile.Name));
             PDTL.Add(Blaze.TdfInteger.Create("LAST", t));
-            PDTL.Add(Blaze.TdfInteger.Create("PID\0", pi.userId));
+            PDTL.Add(Blaze.TdfInteger.Create("PID\0", pi.UserId));
             PDTL.Add(Blaze.TdfInteger.Create("PLAT", 4)); //#1 XBL2 #2 PS3 #3 WII #4 PC
             PDTL.Add(Blaze.TdfInteger.Create("STAS", 2));
             PDTL.Add(Blaze.TdfInteger.Create("XREF", 0));
@@ -78,25 +80,25 @@ namespace CNCEmu
             Result.Add(Blaze.TdfInteger.Create("UNDR", 0));
 
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, Result);
-            Logger.LogPacket("ExpressLog", Convert.ToInt32(pi.userId), buff); //TestLog
+            Logger.LogPacket("ExpressLog", Convert.ToInt32(pi.UserId), buff); //TestLog
             ns.Write(buff, 0, buff.Length);
 
             // Send UserAuthenticated Packet
             List<Blaze.Tdf> Result2 = UserAuthenticatedCommand.UserAuthenticated(pi);
             byte[] buff2 = Blaze.CreatePacket(0x7802, 8, 0, 0x2000, p.ID, Result2);
-            Logger.LogPacket("UserAuthenticated", Convert.ToInt32(pi.userId), buff2); //TestLog
+            Logger.LogPacket("UserAuthenticated", Convert.ToInt32(pi.UserId), buff2); //TestLog
             ns.Write(buff2, 0, buff2.Length);
 
             //Send UserUpdated Packet
             List<Blaze.Tdf> Result3 = UserUpdatedCommand.UserUpdated(pi);
             byte[] buff3 = Blaze.CreatePacket(0x7802, 5, 0, 0x2000, p.ID, Result3);
-            Logger.LogPacket("UserUpdated", Convert.ToInt32(pi.userId), buff3); //TestLog
+            Logger.LogPacket("UserUpdated", Convert.ToInt32(pi.UserId), buff3); //TestLog
             ns.Write(buff3, 0, buff3.Length);
 
             //Send UserAdded Packet
             List<Blaze.Tdf> Result4 = UserAddedCommand.UserAdded(pi);
             byte[] buff4 = Blaze.CreatePacket(0x7802, 2, 0, 0x2000, p.ID, Result4);
-            Logger.LogPacket("UserAdded", Convert.ToInt32(pi.userId), buff4); //TestLog
+            Logger.LogPacket("UserAdded", Convert.ToInt32(pi.UserId), buff4); //TestLog
             ns.Write(buff4, 0, buff4.Length);
 
             ns.Flush();
@@ -104,36 +106,26 @@ namespace CNCEmu
 
         public static void Login(Blaze.Packet p, PlayerInfo pi, NetworkStream ns)
         {
-            if (!pi.isServer)
+            if (!pi.IsServer)
             {
                 List<Blaze.Tdf> input = Blaze.ReadPacketContent(p);
                 Blaze.TdfString MAIL = (Blaze.TdfString)input[0];
                 string mail = MAIL.Value;
-                long id = 0;
 
-                foreach (Profile profile in Profiles.profiles)
-                    if (profile.mail == mail)
-                    {
-                        pi.profile = profile;
-                        id = profile.id;
-                        break;
-                    }
-                if (pi.profile == null)
+                pi.Profile = ProfileService.Instance.GetProfileByEmail(mail);
+                var id = pi.Profile?.Id ?? 0;
+
+                if (pi.Profile == null)
                 {
-                    BlazeServer.Log("[CLNT] #" + pi.userId + " Could not find player profile for mail: " + mail + " !", System.Drawing.Color.Red);
-                    pi.userId = 0;
+                    BlazeServer.Log("[CLNT] #" + pi.UserId + " Could not find player profile for mail: " + mail + " !", System.Drawing.Color.Red);
+                    pi.UserId = 0;
                     return;
                 }
                 else
                 {
-                    for (int i = 0; i < BlazeServer.allClients.Count; i++)
-                        if (BlazeServer.allClients[i].userId == id)
-                        {
-                            BlazeServer.allClients.RemoveAt(i);
-                            i--;
-                        }
-                    pi.userId = id;
-                    BlazeServer.Log("[CLNT] New ID #" + pi.userId + " Client Playername = \"" + pi.profile.name + "\"", System.Drawing.Color.Blue);
+                    BlazeServer.RemovePlayer(id);
+                    pi.UserId = id;
+                    BlazeServer.Log("[CLNT] New ID #" + pi.UserId + " Client Playername = \"" + pi.Profile.Name + "\"", System.Drawing.Color.Blue);
                 }
             }
 
@@ -147,9 +139,9 @@ namespace CNCEmu
 
             List<Blaze.TdfStruct> playerentries = new List<Blaze.TdfStruct>();
             List<Blaze.Tdf> PlayerEntry = new List<Blaze.Tdf>();
-            PlayerEntry.Add(Blaze.TdfString.Create("DSNM", pi.profile.name));
+            PlayerEntry.Add(Blaze.TdfString.Create("DSNM", pi.Profile.Name));
             PlayerEntry.Add(Blaze.TdfInteger.Create("LAST", 0));
-            PlayerEntry.Add(Blaze.TdfInteger.Create("PID\0", pi.userId));
+            PlayerEntry.Add(Blaze.TdfInteger.Create("PID\0", pi.UserId));
             PlayerEntry.Add(Blaze.TdfInteger.Create("STAS", 2));
             PlayerEntry.Add(Blaze.TdfInteger.Create("XREF", 0));
             PlayerEntry.Add(Blaze.TdfInteger.Create("XTYP", 0));
@@ -158,11 +150,11 @@ namespace CNCEmu
 
             Result.Add(Blaze.TdfString.Create("SKEY", "123456"));
             Result.Add(Blaze.TdfInteger.Create("SPAM", 0));
-            Result.Add(Blaze.TdfInteger.Create("UID\0", pi.userId));
+            Result.Add(Blaze.TdfInteger.Create("UID\0", pi.UserId));
             Result.Add(Blaze.TdfInteger.Create("UNDR", 0));
 
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, Result);
-            Logger.LogPacket("Log", Convert.ToInt32(pi.userId), buff); //TestLog
+            Logger.LogPacket("Log", Convert.ToInt32(pi.UserId), buff); //TestLog
 
             ns.Write(buff, 0, buff.Length);
             ns.Flush();
@@ -172,20 +164,20 @@ namespace CNCEmu
         {
             uint t = Blaze.GetUnixTimeStamp();
             List<Blaze.Tdf> SESS = new List<Blaze.Tdf>();
-            SESS.Add(Blaze.TdfInteger.Create("BUID", pi.userId));
+            SESS.Add(Blaze.TdfInteger.Create("BUID", pi.UserId));
             SESS.Add(Blaze.TdfInteger.Create("FRST", 0));
             SESS.Add(Blaze.TdfString.Create("KEY\0", "some_client_key"));
             SESS.Add(Blaze.TdfInteger.Create("LLOG", t));
             SESS.Add(Blaze.TdfString.Create("MAIL", ""));
             List<Blaze.Tdf> PDTL = new List<Blaze.Tdf>();
-            PDTL.Add(Blaze.TdfString.Create("DSNM", pi.profile.name));
+            PDTL.Add(Blaze.TdfString.Create("DSNM", pi.Profile.Name));
             PDTL.Add(Blaze.TdfInteger.Create("LAST", t));
-            PDTL.Add(Blaze.TdfInteger.Create("PID\0", pi.userId));
+            PDTL.Add(Blaze.TdfInteger.Create("PID\0", pi.UserId));
             PDTL.Add(Blaze.TdfInteger.Create("STAS", 0));
             PDTL.Add(Blaze.TdfInteger.Create("XREF", 0));
             PDTL.Add(Blaze.TdfInteger.Create("XTYP", 0));
             SESS.Add(Blaze.TdfStruct.Create("PDTL", PDTL));
-            SESS.Add(Blaze.TdfInteger.Create("UID\0", pi.userId));
+            SESS.Add(Blaze.TdfInteger.Create("UID\0", pi.UserId));
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, SESS);
             ns.Write(buff, 0, buff.Length);
             ns.Flush();
@@ -196,19 +188,19 @@ namespace CNCEmu
             // Send UserAuthenticated Packet
             List<Blaze.Tdf> Result2 = UserAuthenticatedCommand.UserAuthenticated(pi);
             byte[] buff2 = Blaze.CreatePacket(0x7802, 8, 0, 0x2000, p.ID, Result2);
-            Logger.LogPacket("UserAuthenticated", Convert.ToInt32(pi.userId), buff2); //TestLog
+            Logger.LogPacket("UserAuthenticated", Convert.ToInt32(pi.UserId), buff2); //TestLog
             ns.Write(buff2, 0, buff2.Length);
 
             //Send UserUpdated Packet
             List<Blaze.Tdf> Result3 = UserUpdatedCommand.UserUpdated(pi);
             byte[] buff3 = Blaze.CreatePacket(0x7802, 5, 0, 0x2000, p.ID, Result3);
-            Logger.LogPacket("UserUpdated", Convert.ToInt32(pi.userId), buff3); //TestLog
+            Logger.LogPacket("UserUpdated", Convert.ToInt32(pi.UserId), buff3); //TestLog
             ns.Write(buff3, 0, buff3.Length);
 
             //Send UserAdded Packet
             List<Blaze.Tdf> Result4 = UserAddedCommand.UserAdded(pi);
             byte[] buff4 = Blaze.CreatePacket(0x7802, 2, 0, 0x2000, p.ID, Result4);
-            Logger.LogPacket("UserAdded", Convert.ToInt32(pi.userId), buff4); //TestLog
+            Logger.LogPacket("UserAdded", Convert.ToInt32(pi.UserId), buff4); //TestLog
             ns.Write(buff4, 0, buff4.Length);
         }
 
@@ -219,7 +211,7 @@ namespace CNCEmu
             ns.Write(buff, 0, buff.Length);
             ns.Flush();
 
-            AsyncUserSessions.NotifyUserRemoved(pi, p, pi.userId, ns);
+            AsyncUserSessions.NotifyUserRemoved(pi, p, pi.UserId, ns);
             AsyncUserSessions.NotifyUserStatus(pi, p, pi, ns);
         }
 
@@ -228,7 +220,7 @@ namespace CNCEmu
             //Send logout Packet
             List<Blaze.Tdf> Result = UserAddedCommand.UserAdded(pi);
             byte[] buff = Blaze.CreatePacket(1, 46, 0, 0x2000, p.ID, Result);
-            Logger.LogPacket("logout", Convert.ToInt32(pi.userId), buff); //TestLog
+            Logger.LogPacket("logout", Convert.ToInt32(pi.UserId), buff); //TestLog
             ns.Write(buff, 0, buff.Length);
         }
 
@@ -237,9 +229,9 @@ namespace CNCEmu
             List<Blaze.Tdf> result = new List<Blaze.Tdf>();
             List<Blaze.TdfStruct> entries = new List<Blaze.TdfStruct>();
             List<Blaze.Tdf> e = new List<Blaze.Tdf>();
-            e.Add(Blaze.TdfString.Create("DSNM", pi.profile.name));
+            e.Add(Blaze.TdfString.Create("DSNM", pi.Profile.Name));
             e.Add(Blaze.TdfInteger.Create("LAST", Blaze.GetUnixTimeStamp()));
-            e.Add(Blaze.TdfInteger.Create("PID\0", pi.profile.id));
+            e.Add(Blaze.TdfInteger.Create("PID\0", pi.Profile.Id));
             e.Add(Blaze.TdfInteger.Create("STAS", 2));
             e.Add(Blaze.TdfInteger.Create("XREF", 0));
             e.Add(Blaze.TdfInteger.Create("XTYP", 0));

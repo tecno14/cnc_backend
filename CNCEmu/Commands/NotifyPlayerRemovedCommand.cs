@@ -14,7 +14,7 @@ namespace CNCEmu
         {
             List<Blaze.Tdf> Result = new List<Blaze.Tdf>();
             Result.Add(Blaze.TdfInteger.Create("CNTX", cntx));
-            Result.Add(Blaze.TdfInteger.Create("GID\0", pi.game.id));
+            Result.Add(Blaze.TdfInteger.Create("GID\0", pi.Game.id));
             Result.Add(Blaze.TdfInteger.Create("PID\0", pid));
             Result.Add(Blaze.TdfInteger.Create("REAS", reas));
             return Result;

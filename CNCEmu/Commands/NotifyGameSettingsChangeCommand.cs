@@ -13,8 +13,8 @@ namespace CNCEmu
         public static List<Blaze.Tdf> NotifyGameSettingsChange(PlayerInfo pi)
         {
             List<Blaze.Tdf> Result = new List<Blaze.Tdf>();
-            Result.Add(Blaze.TdfInteger.Create("ATTR", pi.game.GSET));
-            Result.Add(Blaze.TdfInteger.Create("GID", pi.game.id));
+            Result.Add(Blaze.TdfInteger.Create("ATTR", pi.Game.GSET));
+            Result.Add(Blaze.TdfInteger.Create("GID", pi.Game.id));
             return Result;
         }
 

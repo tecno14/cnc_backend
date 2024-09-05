@@ -28,11 +28,11 @@ namespace CNCEmu
             DATA.Add(Blaze.TdfInteger.Create("UATT", 0)); //UserInfoAttribute
             Result.Add(Blaze.TdfStruct.Create("DATA", DATA));
 
-            USER.Add(Blaze.TdfInteger.Create("AID", pi.userId));
+            USER.Add(Blaze.TdfInteger.Create("AID", pi.UserId));
             USER.Add(Blaze.TdfInteger.Create("ALOC", 1701729619));
-            USER.Add(Blaze.TdfInteger.Create("ID", pi.userId));
-            USER.Add(Blaze.TdfString.Create("NAME", pi.profile.name));
-            USER.Add(Blaze.TdfInteger.Create("ORIG", pi.userId));
+            USER.Add(Blaze.TdfInteger.Create("ID", pi.UserId));
+            USER.Add(Blaze.TdfString.Create("NAME", pi.Profile.Name));
+            USER.Add(Blaze.TdfInteger.Create("ORIG", pi.UserId));
             USER.Add(Blaze.TdfInteger.Create("PIDI", 0));
             Result.Add(Blaze.TdfStruct.Create("USER", USER));
 

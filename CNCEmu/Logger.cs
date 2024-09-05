@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
+using CNCEmu.Services.Logger;
 
 namespace CNCEmu
 {

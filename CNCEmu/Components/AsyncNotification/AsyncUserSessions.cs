@@ -15,11 +15,11 @@ namespace CNCEmu
         {
             List<Blaze.Tdf> Result = new List<Blaze.Tdf>();
             Result.Add(BlazeHelper.CreateUserDataStruct(pi));
-            Result.Add(Blaze.TdfInteger.Create("USID", pi.userId));
+            Result.Add(Blaze.TdfInteger.Create("USID", pi.UserId));
             byte[] buff = Blaze.CreatePacket(0x7802, 1, 0, 0x2000, 0, Result);
             ns.Write(buff, 0, buff.Length);
             ns.Flush();
-            BlazeServer.Log("[CLNT] #" + src.userId + " [7802:0001] UserSessionExtendedDataUpdateNotification");
+            BlazeServer.Log("[CLNT] #" + src.UserId + " [7802:0001] UserSessionExtendedDataUpdateNotification");
         }
 
         public static void NotifyUserAdded(PlayerInfo src, Blaze.Packet p, PlayerInfo pi, NetworkStream ns)
@@ -30,7 +30,7 @@ namespace CNCEmu
             byte[] buff = Blaze.CreatePacket(0x7802, 0x2, 0, 0x2000, 0, result);
             ns.Write(buff, 0, buff.Length);
             ns.Flush();
-            BlazeServer.Log("[CLNT] #" + src.userId + " [7802:0001] NotifyUserAdded");
+            BlazeServer.Log("[CLNT] #" + src.UserId + " [7802:0001] NotifyUserAdded");
         }
 
         public static void NotifyUserRemoved(PlayerInfo src, Blaze.Packet p, long pid, NetworkStream ns)
@@ -40,18 +40,18 @@ namespace CNCEmu
             byte[] buff = Blaze.CreatePacket(0x7802, 0x3, 0, 0x2000, 0, result);
             ns.Write(buff, 0, buff.Length);
             ns.Flush();
-            BlazeServer.Log("[CLNT] #" + src.userId + " [7802:0001] NotifyUserRemoved");
+            BlazeServer.Log("[CLNT] #" + src.UserId + " [7802:0001] NotifyUserRemoved");
         }
 
         public static void NotifyUserStatus(PlayerInfo src, Blaze.Packet p, PlayerInfo pi, NetworkStream ns)
         {
             List<Blaze.Tdf> result = new List<Blaze.Tdf>();
             result.Add(Blaze.TdfInteger.Create("FLGS", 3));
-            result.Add(Blaze.TdfInteger.Create("ID\0\0", pi.userId));
+            result.Add(Blaze.TdfInteger.Create("ID\0\0", pi.UserId));
             byte[] buff = Blaze.CreatePacket(0x7802, 0x5, 0, 0x2000, 0, result);
             ns.Write(buff, 0, buff.Length);
             ns.Flush();
-            BlazeServer.Log("[CLNT] #" + src.userId + " [7802:0001] NotifyUserStatus");
+            BlazeServer.Log("[CLNT] #" + src.UserId + " [7802:0001] NotifyUserStatus");
         }
     }
 }

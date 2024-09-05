@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CNCEmu
+﻿namespace CNCEmu.Constants
 {
     public static class ProviderInfo
     {
-        public static string backendIP = "0.0.0.0";
+        public static string BackendIP { get; private set; } = "0.0.0.0"; // todo: why not always use `IPAddress.Any` = (0.0.0.0) ?
+
+        public static int BlazePort { get; private set; } = 3659;
         public static string serverIP = "10.20.102.99";
 
         public static string ams_psa = "qos-prod-bio-dub-common-common.gos.ea.com";

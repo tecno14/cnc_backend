@@ -1,4 +1,6 @@
 ﻿using BlazeLibWV;
+using CNCEmu.Constants;
+using CNCEmu.Services.Logger;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,7 +52,7 @@ namespace CNCEmu
             try
             {
                 Log("[REDI] Redirector starting...");
-                lRedirector = new TcpListener(IPAddress.Parse(ProviderInfo.backendIP), 42127);
+                lRedirector = new TcpListener(IPAddress.Parse(ProviderInfo.BackendIP), 42127);
                 Log("[REDI] Redirector bound to port: 42127");
                 lRedirector.Start();
                 if (useSSL)

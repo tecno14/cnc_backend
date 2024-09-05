@@ -18,7 +18,7 @@ namespace CNCEmu
                     //AuthLogin(p, pi, ns);
                     break;
                 default:
-                    Logger.Log("[CLNT] #" + pi.userId + " Component: [" + p.Component + "] # Command: " + p.Command + " [at] " + " [ACCOUNTS] " + " not found.", System.Drawing.Color.Red);
+                    Logger.Log("[CLNT] #" + pi.UserId + " Component: [" + p.Component + "] # Command: " + p.Command + " [at] " + " [ACCOUNTS] " + " not found.", System.Drawing.Color.Red);
                     break;
             }
         }

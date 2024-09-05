@@ -1,4 +1,5 @@
 ﻿using BlazeLibWV;
+using CNCEmu.Services.Logger;
 using CNCEmu.Services.Network;
 using System;
 using System.Collections.Generic;
@@ -23,18 +24,18 @@ namespace CNCEmu.Forms
             InitializeComponent();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void MainForm_Load(object sender, EventArgs e)
         {
             BackendLog.Clear();
             CleanPackets.Clean();
             GenFiles.CreatePackets();
-            Logger.box = rtb1;
-            BlazeServer.box = rtb1;
-            RedirectorServer.box = rtb1;
+            Logger.box = LogRTB;
+            //BlazeServer.box = LogRTB;
+            RedirectorServer.box = LogRTB;
 
-            onlyHighToolStripMenuItem.Checked =
-            highAndMediumToolStripMenuItem.Checked =
-            allToolStripMenuItem.Checked = false;
+            OnlyHighMenuItem.Checked =
+            HighAndMediumMenuItem.Checked =
+            AllMenuItem.Checked = false;
 
             Config.Credits();
             Config.Init();
@@ -43,61 +44,57 @@ namespace CNCEmu.Forms
             switch (Logger.LogLevel)
             {
                 case LogPriority.high:
-                    onlyHighToolStripMenuItem.Checked = true;
+                    OnlyHighMenuItem.Checked = true;
                     break;
                 case LogPriority.medium:
-                    highAndMediumToolStripMenuItem.Checked = true;
+                    HighAndMediumMenuItem.Checked = true;
                     break;
                 case LogPriority.low:
-                    allToolStripMenuItem.Checked = true;
+                    AllMenuItem.Checked = true;
                     break;
             }
 
-            LabelVersion.Text = Assembly
+            VersionLbl.Text = Assembly
                 .GetExecutingAssembly()
                 .GetCustomAttribute<AssemblyFileVersionAttribute>()
                 .Version;
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private void MainForm_Closing(object sender, FormClosingEventArgs e)
         {
             if (RedirectorServer._exit) RedirectorServer.Stop();
-            if (BlazeServer._exit) BlazeServer.Stop();
+            BlazeServer.Instance.Stop();
             Application.Exit();
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (RedirectorServer._exit) RedirectorServer.Stop();
-            if (BlazeServer._exit) BlazeServer.Stop();
-            Application.Exit();
-        }
+        private void ExitMenuItem_Click(object sender, EventArgs e) => 
+            Close();
 
-        private void onlyHighToolStripMenuItem_Click(object sender, EventArgs e)
+        private void OnlyHighMenuItem_Click(object sender, EventArgs e)
         {
-            allToolStripMenuItem.Checked =
-            highAndMediumToolStripMenuItem.Checked = false;
-            onlyHighToolStripMenuItem.Checked = true;
+            AllMenuItem.Checked =
+            HighAndMediumMenuItem.Checked = false;
+            OnlyHighMenuItem.Checked = true;
             Logger.LogLevel = LogPriority.high;
         }
 
-        private void highAndMediumToolStripMenuItem_Click(object sender, EventArgs e)
+        private void HighAndMediumMenuItem_Click(object sender, EventArgs e)
         {
-            onlyHighToolStripMenuItem.Checked =
-            allToolStripMenuItem.Checked = false;
-            highAndMediumToolStripMenuItem.Checked = true;
+            OnlyHighMenuItem.Checked =
+            AllMenuItem.Checked = false;
+            HighAndMediumMenuItem.Checked = true;
             Logger.LogLevel = LogPriority.medium;
         }
 
-        private void allToolStripMenuItem_Click(object sender, EventArgs e)
+        private void AllMenuItem_Click(object sender, EventArgs e)
         {
-            onlyHighToolStripMenuItem.Checked =
-            highAndMediumToolStripMenuItem.Checked = false;
-            allToolStripMenuItem.Checked = true;
+            OnlyHighMenuItem.Checked =
+            HighAndMediumMenuItem.Checked = false;
+            AllMenuItem.Checked = true;
             Logger.LogLevel = LogPriority.low;
         }
 
-        private void generateProviderIDdatToolStripMenuItem_Click(object sender, EventArgs e)
+        private void GenerateProviderIDMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog d = new SaveFileDialog();
             d.Filter = "ProviderID.dat|ProviderID.dat";
@@ -122,35 +119,35 @@ namespace CNCEmu.Forms
             }
         }
 
-        private void toolStripButton1_Click(object sender, EventArgs e)
+        private void SearchBtn_Click(object sender, EventArgs e)
         {
             SearchInLog();
         }
 
         private void SearchInLog()
         {
-            int pos = rtb1.SelectionStart + 1;
-            if (pos < 0 || pos >= rtb1.Text.Length)
+            int pos = LogRTB.SelectionStart + 1;
+            if (pos < 0 || pos >= LogRTB.Text.Length)
                 pos = 0;
-            int next = rtb1.Text.IndexOf(toolStripTextBox1.Text, pos);
+            int next = LogRTB.Text.IndexOf(SearchTB.Text, pos);
             if (next != -1)
             {
-                rtb1.SelectionStart = next;
-                rtb1.SelectionLength = toolStripTextBox1.Text.Length;
-                rtb1.ScrollToCaret();
+                LogRTB.SelectionStart = next;
+                LogRTB.SelectionLength = SearchTB.Text.Length;
+                LogRTB.ScrollToCaret();
             }
         }
 
-        private void toolStripTextBox1_KeyUp(object sender, KeyEventArgs e)
+        private void SearchTB_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                rtb1.Focus();
+                LogRTB.Focus();
                 SearchInLog();
             }
         }
 
-        private void toolStripButton2_Click(object sender, EventArgs e)
+        private void RefreshSB_Click(object sender, EventArgs e)
         {
             RefreshPackets();
         }
@@ -312,7 +309,7 @@ namespace CNCEmu.Forms
             }
         }
 
-        private void toolStripButton3_Click(object sender, EventArgs e)
+        private void LoadFolderSB_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog d = new FolderBrowserDialog();
             if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -324,7 +321,7 @@ namespace CNCEmu.Forms
             }
         }
 
-        private void toolStripButton4_Click(object sender, EventArgs e)
+        private void LabelByteSB_Click(object sender, EventArgs e)
         {
             try
             {
@@ -340,7 +337,7 @@ namespace CNCEmu.Forms
             }
         }
 
-        private void toolStripButton5_Click(object sender, EventArgs e)
+        private void ByteLabelSB_Click(object sender, EventArgs e)
         {
             try
             {
@@ -355,7 +352,7 @@ namespace CNCEmu.Forms
             }
         }
 
-        private void toolStripButton6_Click(object sender, EventArgs e)
+        private void CompressIntSB_Click(object sender, EventArgs e)
         {
             try
             {
@@ -370,7 +367,7 @@ namespace CNCEmu.Forms
             }
         }
 
-        private void toolStripButton7_Click(object sender, EventArgs e)
+        private void DecompressIntSB_Click(object sender, EventArgs e)
         {
             try
             {
@@ -384,13 +381,13 @@ namespace CNCEmu.Forms
             }
         }
 
-        private void playerProfileToolStripMenuItem_Click(object sender, EventArgs e)
+        private void PlayerProfileMenuItem_Click(object sender, EventArgs e)
         {
             ProfileForm f = new ProfileForm();
             f.ShowDialog();
         }
 
-        private void editConfigToolStripMenuItem_Click(object sender, EventArgs e)
+        private void EditConfigMenuItem_Click(object sender, EventArgs e)
         {
             Helper.RunShell("notepad.exe",Config.ConfigFile);
         }
@@ -517,22 +514,22 @@ namespace CNCEmu.Forms
             }
         }
 
-        private void BtnStartBlazeServer_Click(object sender, EventArgs e)
+        private void StartBlazeServerBtn_Click(object sender, EventArgs e)
         {
-            if (!BlazeServer._exit) BlazeServer.Start();
+            BlazeServer.Instance.Start();
         }
 
-        private void BtnStartRedirectorServer_Click(object sender, EventArgs e)
+        private void StartRedirectorServerBtn_Click(object sender, EventArgs e)
         {
             if (!RedirectorServer._exit) RedirectorServer.Start();
         }
 
-        private void SIHelp_Click(object sender, EventArgs e)
+        private void HelpMenuItem_Click(object sender, EventArgs e)
         {
             Utils.OpenUrl("https://github.com/Xevrac/cnc_backend/wiki");
         }
 
-        private void SIAbout_Click(object sender, EventArgs e)
+        private void AboutMenuItem_Click(object sender, EventArgs e)
         {
             Utils.OpenUrl("https://github.com/Xevrac/cnc_backend/wiki/About");
         }
@@ -547,7 +544,7 @@ namespace CNCEmu.Forms
 
         }
 
-        private void toolStripButton8_Click(object sender, EventArgs e)
+        private void CacheSB_Click(object sender, EventArgs e)
         {
             DeletePackets();
         }

@@ -13,8 +13,8 @@ namespace CNCEmu
         public static List<Blaze.Tdf> NotifyGamePlayerStateChange(PlayerInfo pi, long stat)
         {
             List<Blaze.Tdf> Result = new List<Blaze.Tdf>();
-            Result.Add(Blaze.TdfInteger.Create("GID\0", pi.game.id));
-            Result.Add(Blaze.TdfInteger.Create("PID\0", pi.userId));
+            Result.Add(Blaze.TdfInteger.Create("GID\0", pi.Game.id));
+            Result.Add(Blaze.TdfInteger.Create("PID\0", pi.UserId));
             Result.Add(Blaze.TdfInteger.Create("STAT", stat));
             return Result;
         }

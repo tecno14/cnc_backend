@@ -31,17 +31,17 @@ namespace CNCEmu
         {
             uint t = Blaze.GetUnixTimeStamp();
             List<Blaze.Tdf> result = new List<Blaze.Tdf>();
-            result.Add(Blaze.TdfInteger.Create("EXID", pi.userId));
-            result.Add(Blaze.TdfInteger.Create("GID\0", pi.game.id));
-            result.Add(Blaze.TdfInteger.Create("LOC\0", pi.loc));
-            result.Add(Blaze.TdfString.Create("NAME", pi.profile.name));
-            result.Add(Blaze.TdfInteger.Create("PID\0", pi.userId));
+            result.Add(Blaze.TdfInteger.Create("EXID", pi.UserId));
+            result.Add(Blaze.TdfInteger.Create("GID\0", pi.Game.id));
+            result.Add(Blaze.TdfInteger.Create("LOC\0", pi.Loc));
+            result.Add(Blaze.TdfString.Create("NAME", pi.Profile.Name));
+            result.Add(Blaze.TdfInteger.Create("PID\0", pi.UserId));
             result.Add(BlazeHelper.CreateNETFieldUnion(pi, "PNET"));
-            result.Add(Blaze.TdfInteger.Create("SID\0", pi.slot));
-            result.Add(Blaze.TdfInteger.Create("STAT", pi.stat));
+            result.Add(Blaze.TdfInteger.Create("SID\0", pi.Slot));
+            result.Add(Blaze.TdfInteger.Create("STAT", pi.Stat));
             result.Add(Blaze.TdfInteger.Create("TIDX", 0xFFFF));
             result.Add(Blaze.TdfInteger.Create("TIME", t));
-            result.Add(Blaze.TdfInteger.Create("UID\0", pi.userId));
+            result.Add(Blaze.TdfInteger.Create("UID\0", pi.UserId));
             return Blaze.TdfStruct.Create(idx.ToString(), result);
         }
 
@@ -50,12 +50,12 @@ namespace CNCEmu
             List<Blaze.TdfStruct> list = new List<Blaze.TdfStruct>();
             List<Blaze.Tdf> e0 = new List<Blaze.Tdf>();
             List<Blaze.Tdf> EXIP = new List<Blaze.Tdf>();
-            EXIP.Add(Blaze.TdfInteger.Create("IP\0\0", pi.exIp));
-            EXIP.Add(Blaze.TdfInteger.Create("PORT", pi.exPort));
+            EXIP.Add(Blaze.TdfInteger.Create("IP\0\0", pi.ExIp));
+            EXIP.Add(Blaze.TdfInteger.Create("PORT", pi.ExPort));
             e0.Add(Blaze.TdfStruct.Create("EXIP", EXIP));
             List<Blaze.Tdf> INIP = new List<Blaze.Tdf>();
-            INIP.Add(Blaze.TdfInteger.Create("IP\0\0", pi.inIp));
-            INIP.Add(Blaze.TdfInteger.Create("PORT", pi.inPort));
+            INIP.Add(Blaze.TdfInteger.Create("IP\0\0", pi.InIp));
+            INIP.Add(Blaze.TdfInteger.Create("PORT", pi.InPort));
             e0.Add(Blaze.TdfStruct.Create("INIP", INIP));
             list.Add(Blaze.TdfStruct.Create("0", e0, true));
             return Blaze.TdfList.Create(label, 3, 1, list);
@@ -65,12 +65,12 @@ namespace CNCEmu
         {
             List<Blaze.Tdf> VALU = new List<Blaze.Tdf>();
             List<Blaze.Tdf> EXIP = new List<Blaze.Tdf>();
-            EXIP.Add(Blaze.TdfInteger.Create("IP", pi.exIp));
-            EXIP.Add(Blaze.TdfInteger.Create("PORT", pi.exPort));
+            EXIP.Add(Blaze.TdfInteger.Create("IP", pi.ExIp));
+            EXIP.Add(Blaze.TdfInteger.Create("PORT", pi.ExPort));
             VALU.Add(Blaze.TdfStruct.Create("EXIP", EXIP));
             List<Blaze.Tdf> INIP = new List<Blaze.Tdf>();
-            INIP.Add(Blaze.TdfInteger.Create("IP", pi.inIp));
-            INIP.Add(Blaze.TdfInteger.Create("PORT", pi.inPort));
+            INIP.Add(Blaze.TdfInteger.Create("IP", pi.InIp));
+            INIP.Add(Blaze.TdfInteger.Create("PORT", pi.InPort));
             VALU.Add(Blaze.TdfStruct.Create("INIP", INIP));
             return Blaze.TdfUnion.Create(label, 2, Blaze.TdfStruct.Create("VALU", VALU));
         }
@@ -79,12 +79,12 @@ namespace CNCEmu
         {
             List<Blaze.Tdf> ADDR = new List<Blaze.Tdf>();
             List<Blaze.Tdf> EXIP = new List<Blaze.Tdf>();
-            EXIP.Add(Blaze.TdfInteger.Create("IP", pi.exIp));
-            EXIP.Add(Blaze.TdfInteger.Create("PORT", pi.exPort));
+            EXIP.Add(Blaze.TdfInteger.Create("IP", pi.ExIp));
+            EXIP.Add(Blaze.TdfInteger.Create("PORT", pi.ExPort));
             ADDR.Add(Blaze.TdfStruct.Create("EXIP", EXIP));
             List<Blaze.Tdf> INIP = new List<Blaze.Tdf>();
-            INIP.Add(Blaze.TdfInteger.Create("IP", pi.inIp));
-            INIP.Add(Blaze.TdfInteger.Create("PORT", pi.inPort));
+            INIP.Add(Blaze.TdfInteger.Create("IP", pi.InIp));
+            INIP.Add(Blaze.TdfInteger.Create("PORT", pi.InPort));
             ADDR.Add(Blaze.TdfStruct.Create("INIP", INIP));
             return Blaze.TdfStruct.Create("ADDR", ADDR, true);
         }
@@ -93,7 +93,7 @@ namespace CNCEmu
         {
             List<Blaze.Tdf> NQOS = new List<Blaze.Tdf>();
             NQOS.Add(Blaze.TdfInteger.Create("DBPS", 0));
-            NQOS.Add(Blaze.TdfInteger.Create("NATT", pi.nat));
+            NQOS.Add(Blaze.TdfInteger.Create("NATT", pi.Nat));
             NQOS.Add(Blaze.TdfInteger.Create("UBPS", 0));
             return Blaze.TdfStruct.Create(label, NQOS);
         }
@@ -101,11 +101,11 @@ namespace CNCEmu
         public static Blaze.TdfStruct CreateUserStruct(PlayerInfo pi)
         {
             List<Blaze.Tdf> USER = new List<Blaze.Tdf>();
-            USER.Add(Blaze.TdfInteger.Create("AID\0", pi.userId));
-            USER.Add(Blaze.TdfInteger.Create("ALOC", pi.loc));
-            USER.Add(Blaze.TdfInteger.Create("EXID\0", pi.userId));
-            USER.Add(Blaze.TdfInteger.Create("ID\0\0", pi.userId));
-            USER.Add(Blaze.TdfString.Create("NAME", pi.profile.name));
+            USER.Add(Blaze.TdfInteger.Create("AID\0", pi.UserId));
+            USER.Add(Blaze.TdfInteger.Create("ALOC", pi.Loc));
+            USER.Add(Blaze.TdfInteger.Create("EXID\0", pi.UserId));
+            USER.Add(Blaze.TdfInteger.Create("ID\0\0", pi.UserId));
+            USER.Add(Blaze.TdfString.Create("NAME", pi.Profile.Name));
             return Blaze.TdfStruct.Create("USER", USER);
         }
 
