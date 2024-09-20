@@ -1,4 +1,7 @@
-﻿using System;
+﻿using CNCEmu.Constants;
+using CNCEmu.DTOs;
+using System;
+using System.IO;
 
 namespace CNCEmu.Models
 {
@@ -35,5 +38,8 @@ namespace CNCEmu.Models
 
         public override string ToString() =>
             $"Id = {Id}, Name = {Name}, Mail = {Email}";
+
+        public string GetFileName() =>
+            Path.Combine(General.ProfileFoler, $"{Id:X8}.{General.ProfileFileExtension}");
     }
 }

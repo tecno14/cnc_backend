@@ -1,0 +1,1 @@
+﻿DTOs (Data Transfer Objects) are used to transfer data between layers.

@@ -1,258 +1,16 @@
-﻿using System;
-using System.IO;
+﻿using BlazeLibWV.Models;
+using BlazeLibWV.Struct;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 
 namespace BlazeLibWV
 {
     public static class Blaze
     {
-
-        #region Classes and Structs
-        public class Packet
-        {
-            public ushort Length;
-            public ushort Component;
-            public ushort Command;
-            public ushort Error;
-            public ushort QType;
-            public ushort ID;
-            public ushort extLength;
-            public byte[] Content;
-        }
-        public struct DoubleVal
-        {
-            public long v1;
-            public long v2;
-            public DoubleVal(long V1, long V2)
-            {
-                v1 = V1;
-                v2 = V2;
-            }
-        }
-        public struct TrippleVal
-        {
-            public long v1;
-            public long v2;
-            public long v3;
-            public TrippleVal(long V1, long V2, long V3)
-            {
-                v1 = V1;
-                v2 = V2;
-                v3 = V3;
-            }
-        }
-        public class Tdf
-        {
-            public string Label;
-            public uint Tag;
-            public byte Type;
-            public TreeNode ToTree()
-            {
-                string typedescription = GetTypeDesc();
-                return new TreeNode(Label + " : " + Type + " (" + typedescription + ")");
-            }
-
-            public string GetTypeDesc()
-            {
-                string typedescription = "TdfUnknown";
-                switch (Type)
-                {
-                    case 0:
-                        typedescription = "TdfInteger";
-                        break;
-                    case 1:
-                        typedescription = "TdfString";
-                        break;
-                    case 2:
-                        typedescription = "TdfBlob";
-                        break;
-                    case 3:
-                        typedescription = "TdfStruct";
-                        break;
-                    case 4:
-                        typedescription = "TdfList";
-                        break;
-                    case 5:
-                        typedescription = "TdfDoubleList";
-                        break;
-                    case 6:
-                        typedescription = "TdfUnion";
-                        break;
-                    case 7:
-                        typedescription = "TdfIntegerList";
-                        break;
-                    case 8:
-                        typedescription = "TdfDoubleVal";
-                        break;
-                    case 9:
-                        typedescription = "TdfTrippleVal";
-                        break;
-                    case 0xA:
-                        typedescription = "TdfFloat";
-                        break;
-                }
-                return typedescription;
-            }
-            public void Set(string label, byte type)
-            {
-                Label = label;
-                Type = type;
-                Tag = 0;
-                byte[] buff = Label2Tag(label);
-                Tag |= (uint)(buff[0] << 24);
-                Tag |= (uint)(buff[1] << 16);
-                Tag |= (uint)(buff[2] << 8);
-            }
-        }
-        public class TdfInteger : Tdf
-        {
-            public long Value;
-            public static TdfInteger Create(string Label, long value)
-            {
-                TdfInteger res = new TdfInteger();
-                res.Set(Label, 0);
-                res.Value = value;
-                return res;
-            }
-        }
-        public class TdfFloat : Tdf
-        {
-            public float Value;
-            public static TdfFloat Create(string Label, float value)
-            {
-                TdfFloat res = new TdfFloat();
-                res.Set(Label, 0xA);
-                res.Value = value;
-                return res;
-            }
-        }
-        public class TdfString : Tdf
-        {
-            public string Value;
-            public static TdfString Create(string Label, string value)
-            {
-                TdfString res = new TdfString();
-                res.Set(Label, 1);
-                res.Value = value;
-                return res;
-            }
-        }
-        public class TdfStruct : Tdf
-        {
-            public List<Tdf> Values;
-            public bool startswith2;
-            public static TdfStruct Create(string Label, List<Tdf> list, bool start2 = false)
-            {
-                TdfStruct res = new TdfStruct();
-                res.startswith2 = start2;
-                res.Set(Label, 3);
-                res.Values = list;
-                return res;
-            }
-        }
-        public class TdfList : Tdf
-        {
-            public byte SubType;
-            public int Count;
-            public object List;
-            public static TdfList Create(string Label, byte subtype, int count, object list)
-            {
-                TdfList res = new TdfList();
-                res.Set(Label, 4);
-                res.SubType = subtype;
-                res.Count = count;
-                res.List = list;
-                return res;
-            }
-        }
-        public class TdfIntegerList : Tdf
-        {
-            public int Count;
-            public List<long> List;
-            public static TdfIntegerList Create(string Label, int count, List<long> list)
-            {
-                TdfIntegerList res = new TdfIntegerList();
-                res.Set(Label, 7);
-                res.Count = count;
-                res.List = list;
-                return res;
-            }
-        }
-        public class TdfDoubleList : Tdf
-        {
-            public byte SubType1;
-            public byte SubType2;
-            public int Count;
-            public object List1;
-            public object List2;
-            public static TdfDoubleList Create(string Label, byte subtype1, byte subtype2, object list1, object list2, int count)
-            {
-                TdfDoubleList res = new TdfDoubleList();
-                res.Set(Label, 5);
-                res.SubType1 = subtype1;
-                res.SubType2 = subtype2;
-                res.List1 = list1;
-                res.List2 = list2;
-                res.Count = count;
-                return res;
-            }
-        }
-        public class TdfDoubleVal : Tdf
-        {
-            public DoubleVal Value;
-            public static TdfDoubleVal Create(string Label, DoubleVal v)
-            {
-                TdfDoubleVal res = new TdfDoubleVal();
-                res.Set(Label, 8);
-                res.Value = v;
-                return res;
-            }
-        }
-        public class TdfTrippleVal : Tdf
-        {
-            public TrippleVal Value;
-            public static TdfTrippleVal Create(string Label, TrippleVal v)
-            {
-                TdfTrippleVal res = new TdfTrippleVal();
-                res.Set(Label, 9);
-                res.Value = v;
-                return res;
-            }
-        }
-        public class TdfUnion : Tdf
-        {
-            public byte UnionType;
-            public Tdf UnionContent;
-            public static TdfUnion Create(string Label, byte unionType = 0x7F, Tdf data = null)
-            {
-                TdfUnion res = new TdfUnion();
-                res.Set(Label, 6);
-                res.UnionType = unionType;
-                res.UnionContent = data;
-                return res;
-            }
-        }
-        public class TdfBlob : Tdf
-        {
-            public byte[] Data;
-            public static TdfBlob Create(string Label, byte[] data = null)
-            {
-                TdfBlob res = new TdfBlob();
-                res.Set(Label, 2);
-                if (data == null)
-                    res.Data = new byte[0];
-                else
-                    res.Data = data;
-                return res;
-            }
-        }
-        #endregion
-
         #region Functions
-
         public static long GetIPfromString(string s)
         {
             long res = 0;
@@ -271,15 +29,18 @@ namespace BlazeLibWV
         {
             return (ip >> 24) + "." + ((ip >> 16) & 0xFF) + "." + ((ip >> 8) & 0xFF) + "." + (ip & 0xFF);
         }
+
         public static Packet ReadBlazePacket(Stream s)
         {
-            Packet res = new Packet();
-            res.Length = ReadUShort(s);
-            res.Component = ReadUShort(s);
-            res.Command = ReadUShort(s);
-            res.Error = ReadUShort(s);
-            res.QType = ReadUShort(s);
-            res.ID = ReadUShort(s);
+            var  res = new Packet
+            {
+                Length = ReadUShort(s),
+                Component = ReadUShort(s),
+                Command = ReadUShort(s),
+                Error = ReadUShort(s),
+                QType = ReadUShort(s),
+                ID = ReadUShort(s)
+            };
             if ((res.QType & 0x10) != 0)
                 res.extLength = ReadUShort(s);
             else
@@ -289,15 +50,18 @@ namespace BlazeLibWV
             s.Read(res.Content, 0, len);
             return res;
         }
+
         public static Packet ReadBlazePacketHeader(Stream s)
         {
-            Packet res = new Packet();
-            res.Length = ReadUShort(s);
-            res.Component = ReadUShort(s);
-            res.Command = ReadUShort(s);
-            res.Error = ReadUShort(s);
-            res.QType = ReadUShort(s);
-            res.ID = ReadUShort(s);
+            Packet res = new Packet
+            {
+                Length = ReadUShort(s),
+                Component = ReadUShort(s),
+                Command = ReadUShort(s),
+                Error = ReadUShort(s),
+                QType = ReadUShort(s),
+                ID = ReadUShort(s)
+            };
             if ((res.QType & 0x10) != 0)
                 res.extLength = ReadUShort(s);
             else
@@ -306,6 +70,7 @@ namespace BlazeLibWV
             res.Content = new byte[len];
             return res;
         }
+
         public static List<Packet> FetchAllBlazePackets(Stream s)
         {
             List<Packet> res = new List<Packet>();
@@ -323,18 +88,21 @@ namespace BlazeLibWV
             }
             return res;
         }
+        
         public static ushort ReadUShort(Stream s)
         {
             byte[] buff = new byte[2];
             s.Read(buff, 0, 2);
             return (ushort)((buff[0] << 8) + buff[1]);
         }
+        
         public static uint ReadUInt(Stream s)
         {
             byte[] buff = new byte[4];
             s.Read(buff, 0, 4);
             return (uint)((buff[0] << 24) + (buff[1] << 16) + (buff[2] << 8) + buff[3]);
         }
+        
         public static float ReadFloat(Stream s)
         {
             byte[] buff = new byte[4];
@@ -344,6 +112,7 @@ namespace BlazeLibWV
                 buffr[i] = buff[3 - i];
             return BitConverter.ToSingle(buffr, 0);
         }
+        
         public static void WriteFloat(Stream s, float f)
         {
             byte[] buff = BitConverter.GetBytes(f);
@@ -353,6 +122,7 @@ namespace BlazeLibWV
                 buffr[i] = buff[3 - i];
             s.Write(buffr, 0, 4);
         }
+        
         public static string TagToLabel(uint Tag)
         {
             string s = "";
@@ -384,6 +154,7 @@ namespace BlazeLibWV
             }
             return s;
         }
+        
         public static byte[] Label2Tag(string Label)
         {
             byte[] res = new byte[3];
@@ -410,6 +181,7 @@ namespace BlazeLibWV
             res[2] |= (byte)((buff[3] & 0x1F));
             return res;
         }
+        
         public static long DecompressInteger(Stream s)
         {
             List<byte> tmp = new List<byte>();
@@ -429,6 +201,7 @@ namespace BlazeLibWV
             }
             return (long)result;
         }
+        
         public static void CompressInteger(long l, Stream s)
         {
             List<byte> result = new List<byte>();
@@ -452,6 +225,7 @@ namespace BlazeLibWV
             foreach (byte b in result)
                 s.WriteByte(b);
         }
+        
         public static string ReadString(Stream s)
         {
             int len = (int)DecompressInteger(s);
@@ -461,6 +235,7 @@ namespace BlazeLibWV
             s.ReadByte();
             return res;
         }
+        
         public static void WriteString(string str, Stream s)
         {
             int len;
@@ -473,6 +248,7 @@ namespace BlazeLibWV
                 s.WriteByte((byte)str[i]);
             s.WriteByte(0);
         }
+        
         public static byte[] StringToByteArray(string hex)
         {
             return Enumerable.Range(0, hex.Length)
@@ -480,21 +256,24 @@ namespace BlazeLibWV
                              .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                              .ToArray();
         }
+        
         public static byte[] PacketToRaw(Packet p)
         {
-            List<byte> res = new List<byte>();
-            res.Add((byte)(p.Length >> 8));
-            res.Add((byte)(p.Length & 0xFF));
-            res.Add((byte)(p.Component >> 8));
-            res.Add((byte)(p.Component & 0xFF));
-            res.Add((byte)(p.Command >> 8));
-            res.Add((byte)(p.Command & 0xFF));
-            res.Add((byte)(p.Error >> 8));
-            res.Add((byte)(p.Error & 0xFF));
-            res.Add((byte)(p.QType >> 8));
-            res.Add((byte)(p.QType & 0xFF));
-            res.Add((byte)(p.ID >> 8));
-            res.Add((byte)(p.ID & 0xFF));
+            List<byte> res = new List<byte>
+            {
+                (byte)(p.Length >> 8),
+                (byte)(p.Length & 0xFF),
+                (byte)(p.Component >> 8),
+                (byte)(p.Component & 0xFF),
+                (byte)(p.Command >> 8),
+                (byte)(p.Command & 0xFF),
+                (byte)(p.Error >> 8),
+                (byte)(p.Error & 0xFF),
+                (byte)(p.QType >> 8),
+                (byte)(p.QType & 0xFF),
+                (byte)(p.ID >> 8),
+                (byte)(p.ID & 0xFF)
+            };
             if ((p.QType & 0x10) != 0)
             {
                 res.Add((byte)(p.extLength >> 8));
@@ -503,21 +282,24 @@ namespace BlazeLibWV
             res.AddRange(p.Content);
             return res.ToArray();
         }
+        
         public static byte[] CreatePacket(ushort Component, ushort Command, ushort Error, ushort QType, ushort ID, List<Tdf> Content)
         {
-            List<byte> res = new List<byte>();
-            res.Add(0);                          //0
-            res.Add(0);
-            res.Add((byte)(Component >> 8));
-            res.Add((byte)(Component & 0xFF));
-            res.Add((byte)(Command >> 8));      //4
-            res.Add((byte)(Command & 0xFF));
-            res.Add((byte)(Error >> 8));
-            res.Add((byte)(Error & 0xFF));
-            res.Add((byte)(QType >> 8));        //8
-            res.Add((byte)(QType & 0xFF));
-            res.Add((byte)(ID >> 8));
-            res.Add((byte)(ID & 0xFF));
+            List<byte> res = new List<byte>
+            {
+                0,                          //0
+                0,
+                (byte)(Component >> 8),
+                (byte)(Component & 0xFF),
+                (byte)(Command >> 8),      //4
+                (byte)(Command & 0xFF),
+                (byte)(Error >> 8),
+                (byte)(Error & 0xFF),
+                (byte)(QType >> 8),        //8
+                (byte)(QType & 0xFF),
+                (byte)(ID >> 8),
+                (byte)(ID & 0xFF)
+            };
             MemoryStream m = new MemoryStream();
             foreach (Tdf tdf in Content)
                 WriteTdf(tdf, m);
@@ -535,10 +317,12 @@ namespace BlazeLibWV
             res.AddRange(m.ToArray());
             return res.ToArray();
         }
+        
         public static uint GetUnixTimeStamp()
         {
             return (UInt32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
         }
+
         public static string HexDump(byte[] bytes, int bytesPerLine = 16)
         {
             if (bytes == null) return "<null>";
@@ -585,11 +369,14 @@ namespace BlazeLibWV
             }
             return result.ToString();
         }
-        public static Blaze.TdfStruct CreateStructStub(List<Tdf> tdfs, bool has2 = false)
+
+        public static TdfStruct CreateStructStub(List<Tdf> tdfs, bool has2 = false)
         {
-            Blaze.TdfStruct res = new TdfStruct();
-            res.Values = tdfs;
-            res.startswith2 = has2;
+            var res = new TdfStruct
+            {
+                Values = tdfs,
+                startswith2 = has2
+            };
             return res;
         }
         #endregion
@@ -630,96 +417,122 @@ namespace BlazeLibWV
                     throw new Exception("Unknown Tdf Type: " + res.Type);
             }
         }
+        
         public static TdfUnion ReadTdfUnion(Tdf head, Stream s)
         {
-            TdfUnion res = new TdfUnion();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.UnionType = (byte)s.ReadByte();
+            var res = new TdfUnion
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                UnionType = (byte)s.ReadByte()
+            };
             if (res.UnionType != 0x7F)
             {
                 res.UnionContent = ReadTdf(s);
             }
             return res;
         }
+        
         public static TdfBlob ReadTdfBlob(Tdf head, Stream s)
         {
-            TdfBlob res = new TdfBlob();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.Data = new byte[DecompressInteger(s)];
+            var res = new TdfBlob
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                Data = new byte[DecompressInteger(s)]
+            };
             for (int i = 0; i < res.Data.Length; i++)
                 res.Data[i] = (byte)s.ReadByte();
             return res;
         }
+        
         public static TdfFloat ReadTdfFloat(Tdf head, Stream s)
         {
-            TdfFloat res = new TdfFloat();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
+            TdfFloat res = new TdfFloat
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type
+            };
             byte[] buff = new byte[4];
             s.Read(buff, 0, 4);
             res.Value = BitConverter.ToSingle(buff, 0);
             return res;
         }
+        
         public static TdfInteger ReadTdfInteger(Tdf head, Stream s)
         {
-            TdfInteger res = new TdfInteger();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.Value = DecompressInteger(s);
+            var res = new TdfInteger
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                Value = DecompressInteger(s)
+            };
             return res;
         }
+        
         public static TdfString ReadTdfString(Tdf head, Stream s)
         {
-            TdfString res = new TdfString();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.Value = ReadString(s);
+            TdfString res = new TdfString
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                Value = ReadString(s)
+            };
             return res;
         }
+        
         public static TdfStruct ReadTdfStruct(Tdf head, Stream s)
         {
-            TdfStruct res = new TdfStruct();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            bool has2 = false;
-            res.Values = ReadStruct(s, out has2);
-            res.startswith2 = has2;
+            var res = new TdfStruct
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                Values = ReadStruct(s, out bool has2),
+                startswith2 = has2
+            };
             return res;
         }
+        
         public static TdfTrippleVal ReadTdfTrippleVal(Tdf head, Stream s)
         {
-            TdfTrippleVal res = new TdfTrippleVal();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.Value = ReadTrippleVal(s);
+            TdfTrippleVal res = new TdfTrippleVal
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                Value = ReadTrippleVal(s)
+            };
             return res;
         }
+        
         public static TdfDoubleVal ReadTdfDoubleVal(Tdf head, Stream s)
         {
-            TdfDoubleVal res = new TdfDoubleVal();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.Value = ReadDoubleVal(s);
+            TdfDoubleVal res = new TdfDoubleVal
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                Value = ReadDoubleVal(s)
+            };
             return res;
         }
+        
         public static TdfList ReadTdfList(Tdf head, Stream s)
         {
-            TdfList res = new TdfList();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.SubType = (byte)s.ReadByte();
-            res.Count = (int)DecompressInteger(s);
+            TdfList res = new TdfList
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                SubType = (byte)s.ReadByte(),
+                Count = (int)DecompressInteger(s)
+            };
             for (int i = 0; i < res.Count; i++)
             {
                 switch (res.SubType)
@@ -741,9 +554,11 @@ namespace BlazeLibWV
                     case 3:
                         if (res.List == null)
                             res.List = new List<TdfStruct>();
-                        List<TdfStruct> l3 = (List<TdfStruct>)res.List;
-                        Blaze.TdfStruct tmp = new TdfStruct();
-                        tmp.startswith2 = false;
+                        var l3 = (List<TdfStruct>)res.List;
+                        var tmp = new TdfStruct
+                        {
+                            startswith2 = false
+                        };
                         tmp.Values = ReadStruct(s, out tmp.startswith2);
                         l3.Add(tmp);
                         res.List = l3;
@@ -761,13 +576,16 @@ namespace BlazeLibWV
             }
             return res;
         }
+        
         public static TdfIntegerList ReadTdfIntegerList(Tdf head, Stream s)
         {
-            TdfIntegerList res = new TdfIntegerList();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.Count = (int)DecompressInteger(s);
+            TdfIntegerList res = new TdfIntegerList
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                Count = (int)DecompressInteger(s)
+            };
             for (int i = 0; i < res.Count; i++)
             {
                 if (res.List == null)
@@ -778,15 +596,18 @@ namespace BlazeLibWV
             }
             return res;
         }
+        
         public static TdfDoubleList ReadTdfDoubleList(Tdf head, Stream s)
         {
-            TdfDoubleList res = new TdfDoubleList();
-            res.Label = head.Label;
-            res.Tag = head.Tag;
-            res.Type = head.Type;
-            res.SubType1 = (byte)s.ReadByte();
-            res.SubType2 = (byte)s.ReadByte();
-            res.Count = (int)DecompressInteger(s);
+            var res = new TdfDoubleList
+            {
+                Label = head.Label,
+                Tag = head.Tag,
+                Type = head.Type,
+                SubType1 = (byte)s.ReadByte(),
+                SubType2 = (byte)s.ReadByte(),
+                Count = (int)DecompressInteger(s)
+            };
             for (int i = 0; i < res.Count; i++)
             {
                 switch (res.SubType1)
@@ -809,8 +630,10 @@ namespace BlazeLibWV
                         if (res.List1 == null)
                             res.List1 = new List<TdfStruct>();
                         List<TdfStruct> l3 = (List<TdfStruct>)res.List1;
-                        Blaze.TdfStruct tmp = new TdfStruct();
-                        tmp.startswith2 = false;
+                        TdfStruct tmp = new TdfStruct
+                        {
+                            startswith2 = false
+                        };
                         tmp.Values = ReadStruct(s, out tmp.startswith2);
                         l3.Add(tmp);
                         res.List1 = l3;
@@ -844,9 +667,11 @@ namespace BlazeLibWV
                     case 3:
                         if (res.List2 == null)
                             res.List2 = new List<TdfStruct>();
-                        List<TdfStruct> l3 = (List<TdfStruct>)res.List2;
-                        Blaze.TdfStruct tmp = new TdfStruct();
-                        tmp.startswith2 = false;
+                        var l3 = (List<TdfStruct>)res.List2;
+                        var tmp = new TdfStruct
+                        {
+                            startswith2 = false
+                        };
                         tmp.Values = ReadStruct(s, out tmp.startswith2);
                         l3.Add(tmp);
                         res.List2 = l3;
@@ -864,12 +689,14 @@ namespace BlazeLibWV
             }
             return res;
         }
+
         public static List<Tdf> ReadStruct(Stream s, out bool has2)
         {
-            List<Tdf> res = new List<Tdf>();
-            byte b = 0;
+            var res = new List<Tdf>();
             bool reshas2 = false;
-            while ((b = (byte)s.ReadByte()) != 0)
+            int b;
+
+            while ((b = s.ReadByte()) != 0)
             {
                 if (b != 2)
                     s.Seek(-1, SeekOrigin.Current);
@@ -877,9 +704,11 @@ namespace BlazeLibWV
                     reshas2 = true;
                 res.Add(ReadTdf(s));
             }
+
             has2 = reshas2;
             return res;
         }
+
         public static List<Tdf> ReadPacketContent(Packet p)
         {
             List<Tdf> res = new List<Tdf>();
@@ -896,19 +725,25 @@ namespace BlazeLibWV
             }
             return res;
         }
+        
         public static DoubleVal ReadDoubleVal(Stream s)
         {
-            DoubleVal res = new DoubleVal();
-            res.v1 = DecompressInteger(s);
-            res.v2 = DecompressInteger(s);
+            var res = new DoubleVal
+            {
+                v1 = DecompressInteger(s),
+                v2 = DecompressInteger(s)
+            };
             return res;
         }
+        
         public static TrippleVal ReadTrippleVal(Stream s)
         {
-            TrippleVal res = new TrippleVal();
-            res.v1 = DecompressInteger(s);
-            res.v2 = DecompressInteger(s);
-            res.v3 = DecompressInteger(s);
+            var res = new TrippleVal
+            {
+                v1 = DecompressInteger(s),
+                v2 = DecompressInteger(s),
+                v3 = DecompressInteger(s)
+            };
             return res;
         }
         #endregion
@@ -977,6 +812,7 @@ namespace BlazeLibWV
                     break;
             }
         }
+        
         public static void WriteTdfList(TdfList tdf, Stream s)
         {
             s.WriteByte(tdf.SubType);
@@ -991,7 +827,7 @@ namespace BlazeLibWV
                         WriteString(((List<string>)tdf.List)[i], s);
                         break;
                     case 3:
-                        Blaze.TdfStruct str = ((List<Blaze.TdfStruct>)tdf.List)[i];
+                        TdfStruct str = ((List<TdfStruct>)tdf.List)[i];
                         if (str.startswith2)
                             s.WriteByte(2);
                         foreach (Tdf ttdf in str.Values)
@@ -1003,6 +839,7 @@ namespace BlazeLibWV
                         break;
                 }
         }
+        
         public static void WriteTdfDoubleList(TdfDoubleList tdf, Stream s)
         {
             s.WriteByte(tdf.SubType1);
@@ -1019,7 +856,7 @@ namespace BlazeLibWV
                         WriteString(((List<string>)(tdf.List1))[i], s);
                         break;
                     case 3:
-                        Blaze.TdfStruct str = ((List<Blaze.TdfStruct>)tdf.List1)[i];
+                        TdfStruct str = ((List<TdfStruct>)tdf.List1)[i];
                         if (str.startswith2)
                             s.WriteByte(2);
                         foreach (Tdf ttdf in str.Values)
@@ -1039,7 +876,7 @@ namespace BlazeLibWV
                         WriteString(((List<string>)(tdf.List2))[i], s);
                         break;
                     case 3:
-                        Blaze.TdfStruct str = ((List<Blaze.TdfStruct>)tdf.List2)[i];
+                        TdfStruct str = ((List<TdfStruct>)tdf.List2)[i];
                         if (str.startswith2)
                             s.WriteByte(2);
                         foreach (Tdf ttdf in str.Values)
@@ -1052,12 +889,14 @@ namespace BlazeLibWV
                 }
             }
         }
+        
         public static void WriteTrippleValue(TrippleVal v, Stream s)
         {
             CompressInteger(v.v1, s);
             CompressInteger(v.v2, s);
             CompressInteger(v.v3, s);
         }
+        
         public static void WriteDoubleValue(DoubleVal v, Stream s)
         {
             CompressInteger(v.v1, s);
@@ -1066,7 +905,7 @@ namespace BlazeLibWV
         #endregion
 
         #region Describers
-        public static string PacketToDescriber(Blaze.Packet p)
+        public static string PacketToDescriber(Packet p)
         {
             string t = p.Command.ToString("X");
             string t2 = p.Component.ToString("X");
@@ -1149,8 +988,6 @@ namespace BlazeLibWV
         public static string[] DescComponent23 = { "A", "getUserSessionFromAuth" };
         public static string[] DescComponent803 = { "5", "drainConsumeable", "6", "getTemplate"};
         public static string[] DescComponent7802 = { "1", "UserSessionExtendedDataUpdate", "2", "UserAdded", "3", "fetchExtendedData", "5", "UserUpdated", "8", "UserAuthenticated", "C", "lookupUser", "D", "lookupUsers", "E", "lookupUsersByPrefix", "14", "updateNetworkInfo", "17", "lookupUserGeoIPData", "18", "overrideUserGeoIPData", "19", "updateUserSessionClientData", "1A", "setUserInfoAttribute", "1B", "resetUserGeoIPData", "20", "lookupUserSessionId", "21", "fetchLastLocaleUsedAndAuthError", "22", "fetchUserFirstLastAuthTime", "23", "resumeSession" };
-
         #endregion
-
     }
 }

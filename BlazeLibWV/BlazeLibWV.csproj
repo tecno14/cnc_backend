@@ -44,7 +44,22 @@
   <ItemGroup>
     <Compile Include="Blaze.cs" />
     <Compile Include="BlazePrettyPrinter.cs" />
+    <Compile Include="Models\Packet.cs" />
+    <Compile Include="Models\Tdf.cs" />
+    <Compile Include="Models\TdfBlob.cs" />
+    <Compile Include="Models\TdfDoubleList.cs" />
+    <Compile Include="Models\TdfDoubleVal.cs" />
+    <Compile Include="Models\TdfFloat.cs" />
+    <Compile Include="Models\TdfInteger.cs" />
+    <Compile Include="Models\TdfIntegerList.cs" />
+    <Compile Include="Models\TdfList.cs" />
+    <Compile Include="Models\TdfString.cs" />
+    <Compile Include="Models\TdfStruct.cs" />
+    <Compile Include="Models\TdfTrippleVal.cs" />
+    <Compile Include="Models\TdfUnion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Struct\DoubleVal.cs" />
+    <Compile Include="Struct\TrippleVal.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

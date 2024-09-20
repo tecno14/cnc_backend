@@ -1,6 +1,9 @@
 ﻿using BlazeLibWV;
-using CNCEmu.Services.Logger;
+using BlazeLibWV.Models;
+using BlazeLibWV.Struct;
+using CNCEmu.Extensions;
 using CNCEmu.Services.Network;
+using CNCEmu.Utils.Logger;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,22 +16,19 @@ namespace CNCEmu.Forms
     public partial class MainForm : Form
     {
         public readonly object _sync = new object();
-        public List<Blaze.Packet> packets = new List<Blaze.Packet>();
+        public List<Packet> packets = new List<Packet>();
         public int packetCount = 0;
-        public List<Blaze.Tdf> inlist;
+        public List<Tdf> inlist;
         public int inlistcount;
         public int clientcount;
 
-        public MainForm()
-        {
+        public MainForm() =>
             InitializeComponent();
-        }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
             BackendLog.Clear();
             CleanPackets.Clean();
-            GenFiles.CreatePackets();
             Logger.box = LogRTB;
             //BlazeServer.box = LogRTB;
             RedirectorServer.box = LogRTB;
@@ -96,8 +96,10 @@ namespace CNCEmu.Forms
 
         private void GenerateProviderIDMenuItem_Click(object sender, EventArgs e)
         {
-            SaveFileDialog d = new SaveFileDialog();
-            d.Filter = "ProviderID.dat|ProviderID.dat";
+            var d = new SaveFileDialog
+            {
+                Filter = "ProviderID.dat|ProviderID.dat"
+            };
             if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 Random rnd = new Random();
@@ -124,20 +126,6 @@ namespace CNCEmu.Forms
             SearchInLog();
         }
 
-        private void SearchInLog()
-        {
-            int pos = LogRTB.SelectionStart + 1;
-            if (pos < 0 || pos >= LogRTB.Text.Length)
-                pos = 0;
-            int next = LogRTB.Text.IndexOf(SearchTB.Text, pos);
-            if (next != -1)
-            {
-                LogRTB.SelectionStart = next;
-                LogRTB.SelectionLength = SearchTB.Text.Length;
-                LogRTB.ScrollToCaret();
-            }
-        }
-
         private void SearchTB_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -152,24 +140,13 @@ namespace CNCEmu.Forms
             RefreshPackets();
         }
 
-        public void RefreshPackets()
-        {
-            listBox1.Items.Clear();
-            string[] files = Directory.GetFiles("logs\\packets\\", "*.bin");
-            foreach (string file in files)
-            {
-                listBox1.Items.Add(Path.GetFileName(file));
-                AddPacket(FileToByteArray(file));
-            }
-        }
-
-        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void ListBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             int n = listBox1.SelectedIndex;
             if (n == -1 || n >= packets.Count)
                 return;
 
-            Blaze.Packet p;
+            Packet p;
 
             lock (_sync)
             {
@@ -181,131 +158,15 @@ namespace CNCEmu.Forms
 
             tv1.Nodes.Clear();
             inlistcount = 0;
-            inlist = new List<Blaze.Tdf>();
+            inlist = new List<Tdf>();
 
             if (p != null)
             {
-                List<Blaze.Tdf> Fields = Blaze.ReadPacketContent(p);
-                foreach (Blaze.Tdf tdf in Fields)
+                List<Tdf> Fields = Blaze.ReadPacketContent(p);
+                foreach (Tdf tdf in Fields)
                 {
                     tv1.Nodes.Add(TdfToTree(tdf));
                 }
-            }
-        }
-
-        public byte[] FileToByteArray(string fileName)
-        {
-            byte[] fileData = null;
-
-            using (FileStream fs = File.OpenRead(fileName))
-            {
-                using (BinaryReader binaryReader = new BinaryReader(fs))
-                {
-                    fileData = binaryReader.ReadBytes((int)fs.Length);
-                }
-            }
-            return fileData;
-        }
-
-        public void AddPacket(byte[] data)
-        {
-            MemoryStream m = new MemoryStream(data);
-            m.Seek(0, 0);
-            List<Blaze.Packet> result = Blaze.FetchAllBlazePackets(m);
-            lock (_sync)
-            {
-                packets.AddRange(result);
-            }
-        }
-
-        private TreeNode TdfToTree(Blaze.Tdf tdf)
-        {
-            TreeNode t, t2, t3;
-            switch (tdf.Type)
-            {
-                case 3:
-                    t = tdf.ToTree();
-                    Blaze.TdfStruct str = (Blaze.TdfStruct)tdf;
-                    if (str.startswith2)
-                        t.Text += " (Starts with 2)";
-                    foreach (Blaze.Tdf td in str.Values)
-                        t.Nodes.Add(TdfToTree(td));
-                    t.Name = (inlistcount++).ToString();
-                    inlist.Add(tdf);
-                    return t;
-                case 4:
-                    t = tdf.ToTree();
-                    Blaze.TdfList l = (Blaze.TdfList)tdf;
-                    if (l.SubType == 3)
-                    {
-                        List<Blaze.TdfStruct> l2 = (List<Blaze.TdfStruct>)l.List;
-                        for (int i = 0; i < l2.Count; i++)
-                        {
-                            t2 = new TreeNode("Entry #" + i);
-                            if (l2[i].startswith2)
-                                t2.Text += " (Starts with 2)";
-                            List<Blaze.Tdf> l3 = l2[i].Values;
-                            for (int j = 0; j < l3.Count; j++)
-                                t2.Nodes.Add(TdfToTree(l3[j]));
-                            t.Nodes.Add(t2);
-                        }
-                    }
-                    t.Name = (inlistcount++).ToString();
-                    inlist.Add(tdf);
-                    return t;
-                case 5:
-                    t = tdf.ToTree();
-                    Blaze.TdfDoubleList ll = (Blaze.TdfDoubleList)tdf;
-                    t2 = new TreeNode("List 1");
-                    if (ll.SubType1 == 3)
-                    {
-                        List<Blaze.TdfStruct> l2 = (List<Blaze.TdfStruct>)ll.List1;
-                        for (int i = 0; i < l2.Count; i++)
-                        {
-                            t3 = new TreeNode("Entry #" + i);
-                            if (l2[i].startswith2)
-                                t2.Text += " (Starts with 2)";
-                            List<Blaze.Tdf> l3 = l2[i].Values;
-                            for (int j = 0; j < l3.Count; j++)
-                                t3.Nodes.Add(TdfToTree(l3[j]));
-                            t2.Nodes.Add(t3);
-                        }
-                        t.Nodes.Add(t2);
-                    }
-                    t2 = new TreeNode("List 2");
-                    if (ll.SubType2 == 3)
-                    {
-                        List<Blaze.TdfStruct> l2 = (List<Blaze.TdfStruct>)ll.List2;
-                        for (int i = 0; i < l2.Count; i++)
-                        {
-                            t3 = new TreeNode("Entry #" + i);
-                            if (l2[i].startswith2)
-                                t2.Text += " (Starts with 2)";
-                            List<Blaze.Tdf> l3 = l2[i].Values;
-                            for (int j = 0; j < l3.Count; j++)
-                                t3.Nodes.Add(TdfToTree(l3[j]));
-                            t2.Nodes.Add(t3);
-                        }
-                        t.Nodes.Add(t2);
-                    }
-                    t.Name = (inlistcount++).ToString();
-                    inlist.Add(tdf);
-                    return t;
-                case 6:
-                    t = tdf.ToTree();
-                    Blaze.TdfUnion tu = (Blaze.TdfUnion)tdf;
-                    if (tu.UnionType != 0x7F)
-                    {
-                        t.Nodes.Add(TdfToTree(tu.UnionContent));
-                    }
-                    t.Name = (inlistcount++).ToString();
-                    inlist.Add(tdf);
-                    return t;
-                default:
-                    t = tdf.ToTree();
-                    t.Name = (inlistcount++).ToString();
-                    inlist.Add(tdf);
-                    return t;
             }
         }
 
@@ -326,7 +187,7 @@ namespace CNCEmu.Forms
             try
             {
                 string text = toolStripTextBox2.Text;
-                byte[] buff = Helper.LabelToBytes(text);
+                byte[] buff = text.LabelToBytes();
                 StringBuilder sb = new StringBuilder();
                 foreach (byte b in buff)
                     sb.Append(b.ToString("X2"));
@@ -345,7 +206,7 @@ namespace CNCEmu.Forms
                 MemoryStream m = new MemoryStream();
                 for (int i = 0; i < text.Length / 2; i++)
                     m.WriteByte(Convert.ToByte(text.Substring(i * 2, 2), 16));
-                toolStripTextBox2.Text = Helper.BytesToLabel(m.ToArray());
+                toolStripTextBox2.Text = m.ToArray().BytesToLabel();
             }
             catch (Exception)
             {
@@ -358,9 +219,9 @@ namespace CNCEmu.Forms
             {
                 string text = toolStripTextBox4.Text.Replace(" ", "").ToUpper();
                 long l = Convert.ToInt64(text, 16);
-                MemoryStream m = new MemoryStream();
-                Helper.WriteCompressedInteger(m, l);
-                toolStripTextBox5.Text = Helper.ByteArrayToHexString(m.ToArray());
+                var m = new MemoryStream();
+                m.WriteCompressedInteger(l);
+                toolStripTextBox5.Text = m.ToArray().ByteArrayToHexString();
             }
             catch (Exception)
             {
@@ -372,9 +233,9 @@ namespace CNCEmu.Forms
             try
             {
                 string text = toolStripTextBox5.Text.Replace(" ", "").ToUpper();
-                MemoryStream m = new MemoryStream(Helper.HexStringToByteArray(text));
+                MemoryStream m = new MemoryStream(text.HexStringToByteArray());
                 m.Seek(0, 0);
-                toolStripTextBox4.Text = Helper.ReadCompressedInteger(m).ToString("X");
+                toolStripTextBox4.Text = m.ReadCompressedInteger().ToString("X");
             }
             catch (Exception)
             {
@@ -389,21 +250,21 @@ namespace CNCEmu.Forms
 
         private void EditConfigMenuItem_Click(object sender, EventArgs e)
         {
-            Helper.RunShell("notepad.exe",Config.ConfigFile);
+            Helper.RunShell("notepad.exe", Config.ConfigFile);
         }
 
-        private void tv1_AfterSelect(object sender, TreeViewEventArgs e)
+        private void Tv1_AfterSelect(object sender, TreeViewEventArgs e)
         {
             TreeNode t = e.Node;
             if (t != null && t.Name != "")
             {
                 int n = Convert.ToInt32(t.Name);
-                Blaze.Tdf tdf = inlist[n];
+                Tdf tdf = inlist[n];
                 string s;
                 switch (tdf.Type)
                 {
                     case 0:
-                        Blaze.TdfInteger ti = (Blaze.TdfInteger)tdf;
+                        TdfInteger ti = (TdfInteger)tdf;
                         rtb2.Text = "0x" + ti.Value.ToString("X");
                         if (ti.Label == "IP  ")
                         {
@@ -411,14 +272,14 @@ namespace CNCEmu.Forms
                         }
                         break;
                     case 1:
-                        rtb2.Text = ((Blaze.TdfString)tdf).Value.ToString();
+                        rtb2.Text = ((TdfString)tdf).Value.ToString();
                         break;
                     case 2:
-                        rtb2.Text = "Length: " + ((Blaze.TdfBlob)tdf).Data.Length.ToString();
-                        rtb2.Text += Environment.NewLine + Blaze.HexDump(((Blaze.TdfBlob)tdf).Data);
+                        rtb2.Text = "Length: " + ((TdfBlob)tdf).Data.Length.ToString();
+                        rtb2.Text += Environment.NewLine + Blaze.HexDump(((TdfBlob)tdf).Data);
                         break;
                     case 4:
-                        Blaze.TdfList l = (Blaze.TdfList)tdf;
+                        TdfList l = (TdfList)tdf;
                         s = "";
                         for (int i = 0; i < l.Count; i++)
                         {
@@ -431,7 +292,7 @@ namespace CNCEmu.Forms
                                     s += "{" + ((List<string>)l.List)[i] + "} ";
                                     break;
                                 case 9:
-                                    Blaze.TrippleVal t2 = ((List<Blaze.TrippleVal>)l.List)[i];
+                                    TrippleVal t2 = ((List<TrippleVal>)l.List)[i];
                                     s += "{" + t2.v1.ToString("X") + "; " + t2.v2.ToString("X") + "; " + t2.v3.ToString("X") + "} ";
                                     break;
                             }
@@ -440,7 +301,7 @@ namespace CNCEmu.Forms
                         break;
                     case 5:
                         s = "";
-                        Blaze.TdfDoubleList ll = (Blaze.TdfDoubleList)tdf;
+                        TdfDoubleList ll = (TdfDoubleList)tdf;
                         for (int i = 0; i < ll.Count; i++)
                         {
                             s += "{";
@@ -486,10 +347,10 @@ namespace CNCEmu.Forms
                         rtb2.Text = s;
                         break;
                     case 6:
-                        rtb2.Text = "Type: 0x" + ((Blaze.TdfUnion)tdf).UnionType.ToString("X2");
+                        rtb2.Text = "Type: 0x" + ((TdfUnion)tdf).UnionType.ToString("X2");
                         break;
                     case 7:
-                        Blaze.TdfIntegerList til = (Blaze.TdfIntegerList)tdf;
+                        TdfIntegerList til = (TdfIntegerList)tdf;
                         s = "";
                         for (int i = 0; i < til.Count; i++)
                         {
@@ -500,11 +361,11 @@ namespace CNCEmu.Forms
                         rtb2.Text = s;
                         break;
                     case 8:
-                        Blaze.TdfDoubleVal dval = (Blaze.TdfDoubleVal)tdf;
+                        TdfDoubleVal dval = (TdfDoubleVal)tdf;
                         rtb2.Text = "0x" + dval.Value.v1.ToString("X") + " 0x" + dval.Value.v2.ToString("X");
                         break;
                     case 9:
-                        Blaze.TdfTrippleVal tval = (Blaze.TdfTrippleVal)tdf;
+                        TdfTrippleVal tval = (TdfTrippleVal)tdf;
                         rtb2.Text = "0x" + tval.Value.v1.ToString("X") + " 0x" + tval.Value.v2.ToString("X") + " 0x" + tval.Value.v3.ToString("X");
                         break;
                     default:
@@ -524,29 +385,154 @@ namespace CNCEmu.Forms
             if (!RedirectorServer._exit) RedirectorServer.Start();
         }
 
-        private void HelpMenuItem_Click(object sender, EventArgs e)
+        private void HelpMenuItem_Click(object sender, EventArgs e) =>
+            Helper.OpenUrl("https://github.com/Xevrac/cnc_backend/wiki");
+
+        private void AboutMenuItem_Click(object sender, EventArgs e) =>
+            Helper.OpenUrl("https://github.com/Xevrac/cnc_backend/wiki/About");
+
+        private void CacheSB_Click(object sender, EventArgs e) =>
+            LogService.ClearPackets();
+
+        private void SearchInLog()
         {
-            Utils.OpenUrl("https://github.com/Xevrac/cnc_backend/wiki");
+            int pos = LogRTB.SelectionStart + 1;
+            if (pos < 0 || pos >= LogRTB.Text.Length)
+                pos = 0;
+            int next = LogRTB.Text.IndexOf(SearchTB.Text, pos);
+            if (next != -1)
+            {
+                LogRTB.SelectionStart = next;
+                LogRTB.SelectionLength = SearchTB.Text.Length;
+                LogRTB.ScrollToCaret();
+            }
         }
 
-        private void AboutMenuItem_Click(object sender, EventArgs e)
+        public void RefreshPackets()
         {
-            Utils.OpenUrl("https://github.com/Xevrac/cnc_backend/wiki/About");
-        }
-
-        public void DeletePackets()
-        {
+            listBox1.Items.Clear();
             string[] files = Directory.GetFiles("logs\\packets\\", "*.bin");
             foreach (string file in files)
             {
-                File.Delete(file);
+                listBox1.Items.Add(Path.GetFileName(file));
+                AddPacket(FileToByteArray(file));
             }
-
         }
 
-        private void CacheSB_Click(object sender, EventArgs e)
+        public byte[] FileToByteArray(string fileName)
         {
-            DeletePackets();
+            byte[] fileData = null;
+
+            using (FileStream fs = File.OpenRead(fileName))
+            {
+                using (BinaryReader binaryReader = new BinaryReader(fs))
+                {
+                    fileData = binaryReader.ReadBytes((int)fs.Length);
+                }
+            }
+            return fileData;
+        }
+
+        public void AddPacket(byte[] data)
+        {
+            MemoryStream m = new MemoryStream(data);
+            m.Seek(0, 0);
+            List<Packet> result = Blaze.FetchAllBlazePackets(m);
+            lock (_sync)
+            {
+                packets.AddRange(result);
+            }
+        }
+
+        private TreeNode TdfToTree(Tdf tdf)
+        {
+            TreeNode t, t2, t3;
+            switch (tdf.Type)
+            {
+                case 3:
+                    t = tdf.ToTree();
+                    TdfStruct str = (TdfStruct)tdf;
+                    if (str.startswith2)
+                        t.Text += " (Starts with 2)";
+                    foreach (Tdf td in str.Values)
+                        t.Nodes.Add(TdfToTree(td));
+                    t.Name = (inlistcount++).ToString();
+                    inlist.Add(tdf);
+                    return t;
+                case 4:
+                    t = tdf.ToTree();
+                    TdfList l = (TdfList)tdf;
+                    if (l.SubType == 3)
+                    {
+                        List<TdfStruct> l2 = (List<TdfStruct>)l.List;
+                        for (int i = 0; i < l2.Count; i++)
+                        {
+                            t2 = new TreeNode("Entry #" + i);
+                            if (l2[i].startswith2)
+                                t2.Text += " (Starts with 2)";
+                            List<Tdf> l3 = l2[i].Values;
+                            for (int j = 0; j < l3.Count; j++)
+                                t2.Nodes.Add(TdfToTree(l3[j]));
+                            t.Nodes.Add(t2);
+                        }
+                    }
+                    t.Name = (inlistcount++).ToString();
+                    inlist.Add(tdf);
+                    return t;
+                case 5:
+                    t = tdf.ToTree();
+                    TdfDoubleList ll = (TdfDoubleList)tdf;
+                    t2 = new TreeNode("List 1");
+                    if (ll.SubType1 == 3)
+                    {
+                        List<TdfStruct> l2 = (List<TdfStruct>)ll.List1;
+                        for (int i = 0; i < l2.Count; i++)
+                        {
+                            t3 = new TreeNode("Entry #" + i);
+                            if (l2[i].startswith2)
+                                t2.Text += " (Starts with 2)";
+                            List<Tdf> l3 = l2[i].Values;
+                            for (int j = 0; j < l3.Count; j++)
+                                t3.Nodes.Add(TdfToTree(l3[j]));
+                            t2.Nodes.Add(t3);
+                        }
+                        t.Nodes.Add(t2);
+                    }
+                    t2 = new TreeNode("List 2");
+                    if (ll.SubType2 == 3)
+                    {
+                        List<TdfStruct> l2 = (List<TdfStruct>)ll.List2;
+                        for (int i = 0; i < l2.Count; i++)
+                        {
+                            t3 = new TreeNode("Entry #" + i);
+                            if (l2[i].startswith2)
+                                t2.Text += " (Starts with 2)";
+                            List<Tdf> l3 = l2[i].Values;
+                            for (int j = 0; j < l3.Count; j++)
+                                t3.Nodes.Add(TdfToTree(l3[j]));
+                            t2.Nodes.Add(t3);
+                        }
+                        t.Nodes.Add(t2);
+                    }
+                    t.Name = (inlistcount++).ToString();
+                    inlist.Add(tdf);
+                    return t;
+                case 6:
+                    t = tdf.ToTree();
+                    TdfUnion tu = (TdfUnion)tdf;
+                    if (tu.UnionType != 0x7F)
+                    {
+                        t.Nodes.Add(TdfToTree(tu.UnionContent));
+                    }
+                    t.Name = (inlistcount++).ToString();
+                    inlist.Add(tdf);
+                    return t;
+                default:
+                    t = tdf.ToTree();
+                    t.Name = (inlistcount++).ToString();
+                    inlist.Add(tdf);
+                    return t;
+            }
         }
     }
 }

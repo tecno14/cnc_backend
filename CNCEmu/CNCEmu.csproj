@@ -70,46 +70,66 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants\General.cs" />
-    <Compile Include="Models\ProfileDto.cs" />
+    <Compile Include="ActionHandlers\GameActionHandler.cs" />
+    <Compile Include="ActionHandlers\UiActionHandler.cs" />
+    <Compile Include="DTOs\GameStateDto.cs" />
+    <Compile Include="DTOs\PlayerDto.cs" />
+    <Compile Include="Enums\ActionType.cs" />
+    <Compile Include="Enums\PlayerType.cs" />
+    <Compile Include="Extensions\SteamExtensions.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Extensions\ByteArrayExtensions.cs" />
+    <Compile Include="Extensions\LogTypeExtensions.cs" />
+    <Compile Include="Extensions\RichTextBoxExtensions.cs" />
+    <Compile Include="Interfaces\IActionHandler.cs" />
+    <Compile Include="Interfaces\Repositories\IGameRepository.cs" />
+    <Compile Include="Interfaces\Services\IGameService.cs" />
+    <Compile Include="Interfaces\Repositories\IPlayerRepository.cs" />
+    <Compile Include="Interfaces\Services\IPlayerService.cs" />
+    <Compile Include="Interfaces\Services\ITcpConnectionService.cs" />
+    <Compile Include="Interfaces\Services\IUiService.cs" />
+    <Compile Include="Models\Action.cs" />
+    <Compile Include="Models\GameState.cs" />
+    <Compile Include="Models\Player.cs" />
+    <Compile Include="_Old\Constants\General.cs" />
+    <Compile Include="DTOs\ProfileDto.cs" />
     <Compile Include="Models\Profile.cs" />
     <Compile Include="Models\State.cs" />
-    <Compile Include="Services\Logger\Log.cs" />
-    <Compile Include="Services\Logger\LogEventArgs.cs" />
-    <Compile Include="Services\Logger\LogIO.cs" />
-    <Compile Include="Services\Logger\LogService.cs" />
-    <Compile Include="Services\Logger\LogType.cs" />
-    <Compile Include="Services\Network\BlazeServer.cs" />
-    <Compile Include="Commands\NotifyClientGameSetupCommand.cs" />
-    <Compile Include="Commands\NotifyGamePlayerStateChangeCommand.cs" />
-    <Compile Include="Commands\NotifyGameSettingsChangeCommand.cs" />
-    <Compile Include="Commands\NotifyGameStateChangeCommand.cs" />
-    <Compile Include="Commands\NotifyPlatformHostInitializedCommand.cs" />
-    <Compile Include="Commands\NotifyPlayerJoinCompletedCommand.cs" />
-    <Compile Include="Commands\NotifyPlayerJoiningCommand.cs" />
-    <Compile Include="Commands\NotifyPlayerRemovedCommand.cs" />
-    <Compile Include="Commands\NotifyServerGameSetupCommand.cs" />
-    <Compile Include="Commands\NotifyUserAddedCommand.cs" />
-    <Compile Include="Commands\NotifyUserRemovedCommand.cs" />
-    <Compile Include="Commands\NotifyUserStatusCommand.cs" />
-    <Compile Include="Commands\UserAddedCommand.cs" />
-    <Compile Include="Commands\UserAuthenticatedCommand.cs" />
-    <Compile Include="Commands\UserSessionExtendedDataUpdateNotificationCommand.cs" />
-    <Compile Include="Commands\UserUpdatedCommand.cs" />
-    <Compile Include="Components\AccountsComponent.cs" />
-    <Compile Include="Components\AssociationListsComponent.cs" />
-    <Compile Include="Components\AsyncNotification\AsyncGameManager.cs" />
-    <Compile Include="Components\AsyncNotification\AsyncStats.cs" />
-    <Compile Include="Components\AsyncNotification\AsyncUserSessions.cs" />
-    <Compile Include="Components\AuthenticationComponent.cs" />
-    <Compile Include="Components\BlazeHelper.cs" />
-    <Compile Include="Components\GameManagerComponent.cs" />
-    <Compile Include="Components\InventoryComponent.cs" />
-    <Compile Include="Components\RSPComponent.cs" />
-    <Compile Include="Components\StatsComponent.cs" />
-    <Compile Include="Components\UserSessionsComponent.cs" />
-    <Compile Include="Components\UtilComponent.cs" />
-    <Compile Include="Config.cs" />
+    <Compile Include="Utils\Logger\Log.cs" />
+    <Compile Include="Utils\Logger\LogEventArgs.cs" />
+    <Compile Include="Utils\Logger\LogService.cs" />
+    <Compile Include="Utils\Logger\LogType.cs" />
+    <Compile Include="_Old\Services\Network\BlazeServer.cs" />
+    <Compile Include="_Old\Commands\NotifyClientGameSetupCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyGamePlayerStateChangeCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyGameSettingsChangeCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyGameStateChangeCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyPlatformHostInitializedCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyPlayerJoinCompletedCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyPlayerJoiningCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyPlayerRemovedCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyServerGameSetupCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyUserAddedCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyUserRemovedCommand.cs" />
+    <Compile Include="_Old\Commands\NotifyUserStatusCommand.cs" />
+    <Compile Include="_Old\Commands\UserAddedCommand.cs" />
+    <Compile Include="_Old\Commands\UserAuthenticatedCommand.cs" />
+    <Compile Include="_Old\Commands\UserSessionExtendedDataUpdateNotificationCommand.cs" />
+    <Compile Include="_Old\Commands\UserUpdatedCommand.cs" />
+    <Compile Include="_Old\Components\AccountsComponent.cs" />
+    <Compile Include="_Old\Components\AssociationListsComponent.cs" />
+    <Compile Include="_Old\Components\AsyncNotification\AsyncGameManager.cs" />
+    <Compile Include="_Old\Components\AsyncNotification\AsyncStats.cs" />
+    <Compile Include="_Old\Components\AsyncNotification\AsyncUserSessions.cs" />
+    <Compile Include="_Old\Components\AuthenticationComponent.cs" />
+    <Compile Include="_Old\Components\BlazeHelper.cs" />
+    <Compile Include="_Old\Components\GameManagerComponent.cs" />
+    <Compile Include="_Old\Components\InventoryComponent.cs" />
+    <Compile Include="_Old\Components\RSPComponent.cs" />
+    <Compile Include="_Old\Components\StatsComponent.cs" />
+    <Compile Include="_Old\Components\UserSessionsComponent.cs" />
+    <Compile Include="_Old\Components\UtilComponent.cs" />
+    <Compile Include="_Old\Config.cs" />
     <Compile Include="Forms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -122,10 +142,8 @@
     <Compile Include="Forms\ProfileForm.Designer.cs">
       <DependentUpon>ProfileForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="GameInfo.cs" />
+    <Compile Include="_Old\GameInfo.cs" />
     <Compile Include="Helper.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="PlayerInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <AutoGen>True</AutoGen>
@@ -137,10 +155,16 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Constants\ProviderInfo.cs" />
-    <Compile Include="RedirectorServer.cs" />
-    <Compile Include="Services\ProfileService.cs" />
-    <Compile Include="Utils.cs" />
+    <Compile Include="_Old\Constants\ProviderInfo.cs" />
+    <Compile Include="_Old\RedirectorServer.cs" />
+    <Compile Include="_Old\Services\ProfileService.cs" />
+    <Compile Include="Repositories\GameRepository.cs" />
+    <Compile Include="Repositories\PlayerRepository.cs" />
+    <Compile Include="Services\GameService.cs" />
+    <Compile Include="Services\PlayerService.cs" />
+    <Compile Include="Services\TcpConnectionService.cs" />
+    <Compile Include="Tcp\TcpClientHandler.cs" />
+    <Compile Include="Tcp\TcpServer.cs" />
     <EmbeddedResource Include="Forms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -153,6 +177,8 @@
       <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="DTOs\Readme.md" />
+    <None Include="Models\Readme.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -163,6 +189,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Readme.md" />
+    <None Include="Repositories\Readme.md" />
+    <None Include="Services\Readme.md" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

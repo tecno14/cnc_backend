@@ -4,6 +4,9 @@ using System.Windows.Forms;
 
 namespace CNCEmu
 {
+    /// <summary>
+    /// Entry point of the application
+    /// </summary>
     static class Program
     {
         /// <summary>
