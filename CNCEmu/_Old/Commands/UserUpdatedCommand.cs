@@ -6,7 +6,7 @@ namespace CNCEmu
 {
     public static class UserUpdatedCommand
     {
-        public static List<Tdf> UserUpdated(Player pi)
+        public static List<Tdf> UserUpdated(User pi)
         {
             List<Tdf> Result = new List<Tdf>
             {

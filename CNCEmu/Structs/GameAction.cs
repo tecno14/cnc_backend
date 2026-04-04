@@ -1,8 +1,8 @@
 ﻿using CNCEmu.Enums;
 
-namespace CNCEmu.Models
+namespace CNCEmu.Structs
 {
-    public class Action
+    public struct GameAction
     {
         public ActionType Type { get; set; }
 

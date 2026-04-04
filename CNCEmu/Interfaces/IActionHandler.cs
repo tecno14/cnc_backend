@@ -1,5 +1,5 @@
 ﻿using CNCEmu.Enums;
-using CNCEmu.Models;
+using CNCEmu.Structs;
 using System.Threading.Tasks;
 
 namespace CNCEmu.Interfaces
@@ -9,7 +9,7 @@ namespace CNCEmu.Interfaces
     /// </summary>
     public interface IActionHandler
     {
-        Task HandleActionAsync(Action action);
+        Task HandleActionAsync(GameAction action);
 
         bool CanHandle(ActionType actionType);
     }

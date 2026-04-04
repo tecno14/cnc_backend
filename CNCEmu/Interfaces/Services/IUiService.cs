@@ -1,10 +1,10 @@
-﻿using CNCEmu.Models;
+﻿using CNCEmu.Structs;
 using System.Threading.Tasks;
 
 namespace CNCEmu.Interfaces.Services
 {
     public interface IUiService
     {
-        Task HandleActionAsync(Action action);
+        Task HandleActionAsync(GameAction action);
     }
 }

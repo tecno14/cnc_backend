@@ -6,7 +6,7 @@ namespace CNCEmu
 {
     public static class AssociationListsComponent
     {
-        public static void HandlePacket(Packet p, Player pi, NetworkStream ns)
+        public static void HandlePacket(Packet p, User pi, NetworkStream ns)
         {
             switch (p.Command)
             {

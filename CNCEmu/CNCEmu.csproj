@@ -12,6 +12,21 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -22,6 +37,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -31,6 +47,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>Resources\blaze.ico</ApplicationIcon>
@@ -73,9 +90,11 @@
     <Compile Include="ActionHandlers\GameActionHandler.cs" />
     <Compile Include="ActionHandlers\UiActionHandler.cs" />
     <Compile Include="DTOs\GameStateDto.cs" />
-    <Compile Include="DTOs\PlayerDto.cs" />
+    <Compile Include="DTOs\UserDto.cs" />
     <Compile Include="Enums\ActionType.cs" />
-    <Compile Include="Enums\PlayerType.cs" />
+    <Compile Include="Enums\GameState.cs" />
+    <Compile Include="Enums\UserRole.cs" />
+    <Compile Include="Extensions\GuidExtensions.cs" />
     <Compile Include="Extensions\SteamExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Extensions\ByteArrayExtensions.cs" />
@@ -88,13 +107,13 @@
     <Compile Include="Interfaces\Services\IPlayerService.cs" />
     <Compile Include="Interfaces\Services\ITcpConnectionService.cs" />
     <Compile Include="Interfaces\Services\IUiService.cs" />
-    <Compile Include="Models\Action.cs" />
-    <Compile Include="Models\GameState.cs" />
-    <Compile Include="Models\Player.cs" />
+    <Compile Include="Structs\GameAction.cs" />
+    <Compile Include="Models\Game.cs" />
+    <Compile Include="Models\User.cs" />
     <Compile Include="_Old\Constants\General.cs" />
-    <Compile Include="DTOs\ProfileDto.cs" />
-    <Compile Include="Models\Profile.cs" />
-    <Compile Include="Models\State.cs" />
+    <Compile Include="DTOs\AccountDto.cs" />
+    <Compile Include="Models\Account.cs" />
+    <Compile Include="Structs\State.cs" />
     <Compile Include="Utils\Logger\Log.cs" />
     <Compile Include="Utils\Logger\LogEventArgs.cs" />
     <Compile Include="Utils\Logger\LogService.cs" />
@@ -142,7 +161,6 @@
     <Compile Include="Forms\ProfileForm.Designer.cs">
       <DependentUpon>ProfileForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="_Old\GameInfo.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -213,7 +231,13 @@
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

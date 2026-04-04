@@ -8,21 +8,21 @@ namespace CNCEmu
 {
     class NotifyPlayerJoiningCommand
     {
-        public static List<Tdf> NotifyPlayerJoining(Player pi)
+        public static List<Tdf> NotifyPlayerJoining(User pi)
         {
             uint t = Blaze.GetUnixTimeStamp();
             
             List<Tdf> Result = new List<Tdf>
             {
-                TdfInteger.Create("GID\0", pi.Game.id)
+                TdfInteger.Create("GID\0", pi.ActiveGame.id)
             };
 
             List<Tdf> PDAT = new List<Tdf>
             {
                 TdfInteger.Create("EXID", pi.UserId),
-                TdfInteger.Create("GID\0", pi.Game.id),
+                TdfInteger.Create("GID\0", pi.ActiveGame.id),
                 TdfInteger.Create("LOC\0", pi.Loc),
-                TdfString.Create("NAME", pi.Profile.Name),
+                TdfString.Create("NAME", pi.Profile.UserName),
                 TdfInteger.Create("PID\0", pi.UserId),
                 BlazeHelper.CreateNETFieldUnion(pi, "PNET"),
                 TdfInteger.Create("SID\0", pi.Slot),

@@ -6,13 +6,13 @@ namespace CNCEmu
 {
     public static class UserAuthenticatedCommand
     {
-        public static List<Tdf> UserAuthenticated(Player pi)
+        public static List<Tdf> UserAuthenticated(User pi)
         {
             List<Tdf> Result = new List<Tdf>
             {
                 TdfInteger.Create("ALOC", 1403663841),
                 TdfInteger.Create("BUID", pi.UserId),
-                TdfString.Create("DSNM", pi.Profile.Name),
+                TdfString.Create("DSNM", pi.Profile.UserName),
                 TdfInteger.Create("FRSC", 0),
                 TdfInteger.Create("FRST", 0),
                 TdfString.Create("KEY", "SESSKY"),

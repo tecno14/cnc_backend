@@ -5,7 +5,7 @@ namespace CNCEmu.DTOs
     /// <summary>
     /// Data Transfer Object for player information.
     /// </summary>
-    public class PlayerDto
+    public struct UserDto
     {
         public Guid Id { get; set; }
 

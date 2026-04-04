@@ -10,7 +10,7 @@ namespace CNCEmu
 {
     public static class AsyncStats
     {
-        public static void GetStatsAsyncNotification(Packet p, Player pi, NetworkStream ns)
+        public static void GetStatsAsyncNotification(Packet p, User pi, NetworkStream ns)
         {
             var input = Blaze.ReadPacketContent(p);
             string statSpace = ((TdfString)input[2]).Value;

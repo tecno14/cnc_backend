@@ -1,12 +1,12 @@
 ﻿using System.Net.Sockets;
 using System.Threading;
 
-namespace CNCEmu.Models
+namespace CNCEmu.Structs
 {
     /// <summary>
     /// Dummy class type for server when a new client connect
     /// </summary>
-    public class State
+    public struct State
     {
         public TcpListener Server { get; set; }
 

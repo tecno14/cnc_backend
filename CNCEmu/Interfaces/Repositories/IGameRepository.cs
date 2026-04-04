@@ -9,12 +9,12 @@ namespace CNCEmu.Interfaces.Repositories
     /// </summary>
     public interface IGameRepository
     {
-        void Save(GameState gameState);
+        void Save(Game gameState);
 
-        GameState GetById(Guid id);
+        Game GetById(Guid id);
 
         void Delete(Guid id);
 
-        IEnumerable<GameState> GetAll();
+        IEnumerable<Game> GetAll();
     }
 }

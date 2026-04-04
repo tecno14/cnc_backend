@@ -20,7 +20,7 @@ namespace CNCEmu.Forms
         {
             try
             {
-                ProfileService.Instance.Add(UsernameTB.Text, EmailTB.Text);
+                ProfileService.Instance.AddNew(UsernameTB.Text, EmailTB.Text);
             }
             catch (Exception ex)
             {

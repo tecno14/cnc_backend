@@ -8,7 +8,7 @@ namespace CNCEmu
 {
     public static class UserAddedCommand
     {
-        public static List<Tdf> UserAdded(Player pi)
+        public static List<Tdf> UserAdded(User pi)
         {
             List<Tdf> Result = new List<Tdf>();
             List<Tdf> DATA = new List<Tdf>();
@@ -29,7 +29,7 @@ namespace CNCEmu
             USER.Add(TdfInteger.Create("AID", pi.UserId));
             USER.Add(TdfInteger.Create("ALOC", 1701729619));
             USER.Add(TdfInteger.Create("ID", pi.UserId));
-            USER.Add(TdfString.Create("NAME", pi.Profile.Name));
+            USER.Add(TdfString.Create("NAME", pi.Profile.UserName));
             USER.Add(TdfInteger.Create("ORIG", pi.UserId));
             USER.Add(TdfInteger.Create("PIDI", 0));
             Result.Add(TdfStruct.Create("USER", USER));

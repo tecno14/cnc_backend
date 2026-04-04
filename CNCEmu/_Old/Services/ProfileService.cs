@@ -1,54 +1,70 @@
-﻿using CNCEmu.Models;
+﻿using CNCEmu.Constants;
+using CNCEmu.DTOs;
+using CNCEmu.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
-using CNCEmu.Constants;
 
 namespace CNCEmu.Services
 {
     public class ProfileService
     {
+        public const string ProfileFoler = "Backend\\Profiles";
+        public const string ProfileFileExtension = "profile";
+
         /// <summary>
         /// Singleton instance
         /// </summary>
-        public static ProfileService Instance { get; private set; } = new ProfileService();
+        public static ProfileService Instance { get; } = new ProfileService();
 
-        private readonly List<Profile> Profiles;
+        private readonly ObservableCollection<Account> Profiles;
 
-        public Profile ServerProfile { get; private set; }
+        [Obsolete]
+        public Account ServerProfile { get; private set; }
 
         private ProfileService()
         {
-            Profiles = LoadProfiles();
+            LoadProfiles().ForEach(p => Profiles.Add(p));
+            Profiles.CollectionChanged += Profiles_CollectionChanged;
 
             // Update id counter
-            Profile.IdCounter = Profiles.Max(p => p.Id);
+            Account.IdCounter = Profiles.Max(p => p.Id_);
 
             // Get server profile
             ServerProfile = GetProfileByName(General.ServerAccountName) ?? 
-                Add(General.ServerAccountName, General.ServerAccountEmail);
+                AddNew(General.ServerAccountName, General.ServerAccountEmail);
+        }
+
+        private void Profiles_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            
         }
 
         /// <summary>
         /// Load all profiles from ProfileFoler files
         /// </summary>
         /// <returns></returns>
-        private List<Profile> LoadProfiles()
+        private List<Account> LoadProfiles()
         {
             // Make sure profile folder exists
-            Directory.CreateDirectory(General.ProfileFoler);
+            Directory.CreateDirectory(ProfileFoler);
 
+            var profiles = new List<Account>();
             // Get all profile files
-            var files = Directory.GetFiles(General.ProfileFoler, $"*.{General.ProfileFileExtension}");
-
-            var profiles = new List<Profile>();
-            foreach (var file in files)
+            foreach (var file in Directory.GetFiles(ProfileFoler, $"*.{ProfileFileExtension}"))
             {
-                var profile = JsonConvert.DeserializeObject<ProfileDto>(File.ReadAllText(file));
-                if (profile != null)
-                    profiles.Add(new Profile(profile));
+                try
+                {
+                    var profile = JsonConvert.DeserializeObject<AccountDto>(File.ReadAllText(file));
+                    profiles.Add(new Account(profile));
+                }
+                catch (Exception ex) 
+                {
+                    // todo
+                }
             }
 
             return profiles;
@@ -58,15 +74,15 @@ namespace CNCEmu.Services
         /// Get all profiles
         /// </summary>
         /// <returns></returns>
-        public List<Profile> GetAll() =>
-            new List<Profile>(Profiles);
+        public List<Account> GetAll() =>
+            new List<Account>(Profiles);
 
         /// <summary>
         /// Get profile by email or null
         /// </summary>
         /// <param name="email"></param>
         /// <returns></returns>
-        public Profile GetProfileByEmail(string email) =>
+        public Account GetProfileByEmail(string email) =>
             Profiles.FirstOrDefault(p => p.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
@@ -74,8 +90,8 @@ namespace CNCEmu.Services
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public Profile GetProfileByName(string name) =>
-            Profiles.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        public Account GetProfileByName(string name) =>
+            Profiles.FirstOrDefault(p => p.UserName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
         /// Add new profile
@@ -84,7 +100,7 @@ namespace CNCEmu.Services
         /// <param name="email"></param>
         /// <returns></returns>
         /// <exception cref="Exception">name or email already exists, or name or email is null</exception>
-        public Profile Add(string name, string email)
+        public Account AddNew(string name, string email)
         {
             if (GetProfileByName(name) != null)
                 throw new Exception("Profile name already exists");
@@ -92,7 +108,7 @@ namespace CNCEmu.Services
             if (GetProfileByEmail(email) != null)
                 throw new Exception("Profile email already exists");
 
-            var profile = new Profile(name, email);
+            var profile = new Account(name, email);
 
             // Save profile file
             File.WriteAllText(profile.GetFileName(), JsonConvert.SerializeObject(profile));
@@ -108,7 +124,7 @@ namespace CNCEmu.Services
         /// </summary>
         /// <param name="profile"></param>
         /// <exception cref="Exception"></exception>
-        public void Remove(Profile profile)
+        public void Remove(Account profile)
         {
             if (!Profiles.Contains(profile))
                 throw new Exception("Profile not found");
@@ -125,6 +141,7 @@ namespace CNCEmu.Services
         /// </summary>
         /// <param name="index"></param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
+        [Obsolete]
         public void RemoveAt(int index)
         {
             if (index < 0 || index >= Profiles.Count)

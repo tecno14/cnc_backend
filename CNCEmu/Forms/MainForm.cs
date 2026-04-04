@@ -28,7 +28,7 @@ namespace CNCEmu.Forms
         private void MainForm_Load(object sender, EventArgs e)
         {
             BackendLog.Clear();
-            CleanPackets.Clean();
+            LogService.ClearPackets();
             Logger.box = LogRTB;
             //BlazeServer.box = LogRTB;
             RedirectorServer.box = LogRTB;

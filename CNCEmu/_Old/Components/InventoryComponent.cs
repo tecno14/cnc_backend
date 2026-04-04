@@ -14,7 +14,7 @@ namespace CNCEmu
 {
     public static class InventoryComponent
     {
-        public static void HandlePacket(Packet p, Player pi, NetworkStream ns)
+        public static void HandlePacket(Packet p, User pi, NetworkStream ns)
         {
             switch (p.Command)
             {
@@ -32,14 +32,14 @@ namespace CNCEmu
             }
         }
 
-        public static void GetItems(Packet p, Player pi, NetworkStream ns)
+        public static void GetItems(Packet p, User pi, NetworkStream ns)
         {
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, new List<Tdf>());
             ns.Write(buff, 0, buff.Length);
             ns.Flush();
         }
 
-        public static void GetTemplate(Packet p, Player pi, NetworkStream ns)
+        public static void GetTemplate(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> Result = new List<Tdf>();
             List<string> t = "{aek971_acog} {aek971_eotech}".ConvertToStringList();

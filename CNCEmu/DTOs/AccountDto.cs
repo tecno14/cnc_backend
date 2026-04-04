@@ -1,6 +1,6 @@
 ﻿namespace CNCEmu.DTOs
 {
-    public class ProfileDto
+    public struct AccountDto
     {
         public long Id { get; set; } 
 

@@ -16,7 +16,7 @@ namespace CNCEmu
 {
     public static class AuthenticationComponent
     {
-        public static void HandlePacket(Packet p, Player pi, NetworkStream ns)
+        public static void HandlePacket(Packet p, User pi, NetworkStream ns)
         {
             switch (p.Command)
             {
@@ -46,7 +46,7 @@ namespace CNCEmu
             }
         }
 
-        public static void ExpressLogin(Packet p, Player pi, NetworkStream ns)
+        public static void ExpressLogin(Packet p, User pi, NetworkStream ns)
         {
             uint t = GetUnixTimeStamp();
 
@@ -73,7 +73,7 @@ namespace CNCEmu
 
             List<Tdf> PDTL = new List<Tdf>
             {
-                TdfString.Create("DSNM", pi.Profile.Name),
+                TdfString.Create("DSNM", pi.Profile.UserName),
                 TdfInteger.Create("LAST", t),
                 TdfInteger.Create("PID\0", pi.UserId),
                 TdfInteger.Create("PLAT", 4), //#1 XBL2 #2 PS3 #3 WII #4 PC
@@ -109,7 +109,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void Login(Packet p, Player pi, NetworkStream ns)
+        public static void Login(Packet p, User pi, NetworkStream ns)
         {
             if (!pi.IsServer)
             {
@@ -118,7 +118,7 @@ namespace CNCEmu
                 string mail = MAIL.Value;
 
                 pi.Profile = ProfileService.Instance.GetProfileByEmail(mail);
-                var id = pi.Profile?.Id ?? 0;
+                var id = pi.Profile?.Id_ ?? 0;
 
                 if (pi.Profile == null)
                 {
@@ -130,7 +130,7 @@ namespace CNCEmu
                 {
                     BlazeServer.RemovePlayer(id);
                     pi.UserId = id;
-                    BlazeServer.Log("[CLNT] New ID #" + pi.UserId + " Client Playername = \"" + pi.Profile.Name + "\"", System.Drawing.Color.Blue);
+                    BlazeServer.Log("[CLNT] New ID #" + pi.UserId + " Client Playername = \"" + pi.Profile.UserName + "\"", System.Drawing.Color.Blue);
                 }
             }
 
@@ -144,7 +144,7 @@ namespace CNCEmu
             List<TdfStruct> playerentries = new List<TdfStruct>();
             List<Tdf> PlayerEntry = new List<Tdf>
             {
-                TdfString.Create("DSNM", pi.Profile.Name),
+                TdfString.Create("DSNM", pi.Profile.UserName),
                 TdfInteger.Create("LAST", 0),
                 TdfInteger.Create("PID\0", pi.UserId),
                 TdfInteger.Create("STAS", 2),
@@ -166,7 +166,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void LoginPersona(Packet p, Player pi, NetworkStream ns)
+        public static void LoginPersona(Packet p, User pi, NetworkStream ns)
         {
             uint t = Blaze.GetUnixTimeStamp();
             List<Tdf> SESS = new List<Tdf>
@@ -179,7 +179,7 @@ namespace CNCEmu
             };
             List<Tdf> PDTL = new List<Tdf>
             {
-                TdfString.Create("DSNM", pi.Profile.Name),
+                TdfString.Create("DSNM", pi.Profile.UserName),
                 TdfInteger.Create("LAST", t),
                 TdfInteger.Create("PID\0", pi.UserId),
                 TdfInteger.Create("STAS", 0),
@@ -214,7 +214,7 @@ namespace CNCEmu
             ns.Write(buff4, 0, buff4.Length);
         }
 
-        public static void LogoutPersona(Packet p, Player pi, NetworkStream ns)
+        public static void LogoutPersona(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>();
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, result);
@@ -225,7 +225,7 @@ namespace CNCEmu
             AsyncUserSessions.NotifyUserStatus(pi, p, pi, ns);
         }
 
-        public static void Logout(Packet p, Player pi, NetworkStream ns)
+        public static void Logout(Packet p, User pi, NetworkStream ns)
         {
             //Send logout Packet
             List<Tdf> Result = UserAddedCommand.UserAdded(pi);
@@ -234,15 +234,15 @@ namespace CNCEmu
             ns.Write(buff, 0, buff.Length);
         }
 
-        public static void ListPersonas(Packet p, Player pi, NetworkStream ns)
+        public static void ListPersonas(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>();
             List<TdfStruct> entries = new List<TdfStruct>();
             List<Tdf> e = new List<Tdf>
             {
-                TdfString.Create("DSNM", pi.Profile.Name),
+                TdfString.Create("DSNM", pi.Profile.UserName),
                 TdfInteger.Create("LAST", Blaze.GetUnixTimeStamp()),
-                TdfInteger.Create("PID\0", pi.Profile.Id),
+                TdfInteger.Create("PID\0", pi.Profile.Id_),
                 TdfInteger.Create("STAS", 2),
                 TdfInteger.Create("XREF", 0),
                 TdfInteger.Create("XTYP", 0)

@@ -6,10 +6,10 @@ namespace CNCEmu.DTOs
     /// <summary>
     /// Data Transfer Object for game state.
     /// </summary>
-    public class GameStateDto
+    public struct GameStateDto
     {
         public Guid Id { get; set; }
-        public List<PlayerDto> Players { get; set; }
+        public List<UserDto> Players { get; set; }
         // Other properties
     }
 }

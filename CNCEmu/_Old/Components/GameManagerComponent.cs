@@ -14,7 +14,7 @@ namespace CNCEmu
 {
     public static class GameManagerComponent
     {
-        public static void HandlePacket(Packet p, Player pi, NetworkStream ns)
+        public static void HandlePacket(Packet p, User pi, NetworkStream ns)
         {
             switch (p.Command)
             {
@@ -74,20 +74,20 @@ namespace CNCEmu
             }
         }
 
-        public static void CreateGame(Packet p, Player pi, NetworkStream ns)
+        public static void CreateGame(Packet p, User pi, NetworkStream ns)
         {
             pi.Stat = 4;
-            pi.Slot = pi.Game.GetNextSlot();
-            pi.Game.SetNextSlot((int)pi.UserId);
-            pi.Game.id = 1;
-            pi.Game.isRunning = true;
-            pi.Game.GSTA = 7;
-            pi.Game.players[0] = pi;
+            pi.Slot = pi.ActiveGame.GetNextSlot();
+            pi.ActiveGame.SetNextSlot((int)pi.UserId);
+            pi.ActiveGame.id = 1;
+            pi.ActiveGame.isRunning = true;
+            pi.ActiveGame.GSTA = 7;
+            pi.ActiveGame.players[0] = pi;
 
             List<Tdf> result = new List<Tdf>
             {
-                TdfInteger.Create("GID\0", pi.Game.id),
-                TdfInteger.Create("GSTA", pi.Game.GSTA)
+                TdfInteger.Create("GID\0", pi.ActiveGame.id),
+                TdfInteger.Create("GSTA", pi.ActiveGame.GSTA)
             };
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, result);
             ns.Write(buff, 0, buff.Length);
@@ -107,7 +107,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void SetGameModRegister(Packet p, Player pi, NetworkStream ns)
+        public static void SetGameModRegister(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>
             {
@@ -123,7 +123,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void SetPlayerCapacity(Packet p, Player pi, NetworkStream ns)
+        public static void SetPlayerCapacity(Packet p, User pi, NetworkStream ns)
         {
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, new List<Tdf>());
             ns.Write(buff, 0, buff.Length);
@@ -138,18 +138,18 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void GetFullGameData(Packet p, Player pi, NetworkStream ns)
+        public static void GetFullGameData(Packet p, User pi, NetworkStream ns)
         {
             // Get server info
-            Player srv = BlazeServer.GetServerInfo();
+            User srv = BlazeServer.GetServerInfo();
             if (srv == null)
             {
                 BlazeServer.Log("[CLNT] #" + pi.UserId + " : cant find game to join!", System.Drawing.Color.Red);
                 return;
             }
-            pi.Game = srv.Game;
-            pi.Slot = srv.Game.GetNextSlot();
-            srv.Game.SetNextSlot((int)pi.UserId);
+            pi.ActiveGame = srv.ActiveGame;
+            pi.Slot = srv.ActiveGame.GetNextSlot();
+            srv.ActiveGame.SetNextSlot((int)pi.UserId);
 
             List<Tdf> result = new List<Tdf>();
             List<TdfStruct> LGAM = new List<TdfStruct>();
@@ -157,14 +157,14 @@ namespace CNCEmu
             List<Tdf> GAME = new List<Tdf>
             {
                 TdfList.Create("ADMN", 0, 1, new List<long>(new long[] { srv.UserId })),
-                srv.Game.ATTR,
+                srv.ActiveGame.ATTR,
                 TdfList.Create("CAP\0", 0, 2, new List<long>(new long[] { 0x20, 0 })),
-                TdfInteger.Create("GID\0", pi.Game.id),
-                TdfString.Create("GNAM", pi.Game.GNAM),
+                TdfInteger.Create("GID\0", pi.ActiveGame.id),
+                TdfString.Create("GNAM", pi.ActiveGame.GNAM),
                 TdfInteger.Create("GPVH", 666),
-                TdfInteger.Create("GSET", pi.Game.GSET),
+                TdfInteger.Create("GSET", pi.ActiveGame.GSET),
                 TdfInteger.Create("GSID", 1),
-                TdfInteger.Create("GSTA", pi.Game.GSTA),
+                TdfInteger.Create("GSTA", pi.ActiveGame.GSTA),
                 TdfString.Create("GTYP", ""),
                 BlazeHelper.CreateNETField(srv, "HNET"),
                 TdfInteger.Create("HSES", 13666),
@@ -193,8 +193,8 @@ namespace CNCEmu
             };
             GAME.Add(TdfStruct.Create("THST", THST));
             GAME.Add(TdfString.Create("UUID", "f5193367-c991-4429-aee4-8d5f3adab938"));
-            GAME.Add(TdfInteger.Create("VOIP", pi.Game.VOIP));
-            GAME.Add(TdfString.Create("VSTR", pi.Game.VSTR));
+            GAME.Add(TdfInteger.Create("VOIP", pi.ActiveGame.VOIP));
+            GAME.Add(TdfString.Create("VSTR", pi.ActiveGame.VSTR));
             ee0.Add(TdfStruct.Create("GAME", GAME));
             LGAM.Add(TdfStruct.Create("0", ee0));
             result.Add(TdfList.Create("LGAM", 3, 1, LGAM));
@@ -203,7 +203,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void UpdateMeshConnection(Packet p, Player pi, NetworkStream ns)
+        public static void UpdateMeshConnection(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> input = Blaze.ReadPacketContent(p);
             List<TdfStruct> entries = (List<TdfStruct>)((TdfList)input[1]).List;
@@ -212,7 +212,7 @@ namespace CNCEmu
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, new List<Tdf>());
             ns.Write(buff, 0, buff.Length);
 
-            Player target = BlazeServer.GetPlayerById(pid.Value);
+            User target = BlazeServer.GetPlayerById(pid.Value);
             if (target != null)
             {
                 if (stat.Value == 2)
@@ -267,22 +267,22 @@ namespace CNCEmu
         }
 
 
-        public static void RemovePlayer(Packet p, Player pi, NetworkStream ns)
+        public static void RemovePlayer(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> input = Blaze.ReadPacketContent(p);
             TdfInteger CNTX = (TdfInteger)input[1];
             TdfInteger PID = (TdfInteger)input[3];
             TdfInteger REAS = (TdfInteger)input[4];
-            pi.Game.RemovePlayer((int)PID.Value);
+            pi.ActiveGame.RemovePlayer((int)PID.Value);
             GC.Collect();
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, new List<Tdf>());
             ns.Write(buff, 0, buff.Length);
-            foreach (Player player in BlazeServer.GetPlayers())
+            foreach (User player in BlazeServer.GetPlayers())
             {
                 if (player != null && player.UserId == PID.Value)
                 {
                     player.Cntx = CNTX.Value;
-                    foreach (Player player2 in pi.Game.players)
+                    foreach (User player2 in pi.ActiveGame.players)
                     {
                         if (player2 != null && player2.UserId != PID.Value)
                         {
@@ -306,13 +306,13 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void ReplayGame(Packet p, Player pi, NetworkStream ns)
+        public static void ReplayGame(Packet p, User pi, NetworkStream ns)
         {
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, new List<Tdf>());
             ns.Write(buff, 0, buff.Length);
-            pi.Game.GSTA = 130;
+            pi.ActiveGame.GSTA = 130;
             pi.Timeout.Restart();
-            foreach (Player peer in pi.Game.players)
+            foreach (User peer in pi.ActiveGame.players)
             {
                 if (peer != null)
                 {
@@ -327,25 +327,25 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void ResetDedicatedServer(Packet p, Player pi, NetworkStream ns)
+        public static void ResetDedicatedServer(Packet p, User pi, NetworkStream ns)
         {
-            if (pi.Game == null)
+            if (pi.ActiveGame == null)
             {
-                pi.Game = new GameInfo();
+                pi.ActiveGame = new Game();
             }
 
             pi.Stat = 4;
-            pi.Slot = pi.Game.GetNextSlot();
-            pi.Game.SetNextSlot((int)pi.UserId);
-            pi.Game.id = 1;
-            pi.Game.isRunning = true;
-            pi.Game.GSTA = 7;
-            pi.Game.players[0] = pi;
+            pi.Slot = pi.ActiveGame.GetNextSlot();
+            pi.ActiveGame.SetNextSlot((int)pi.UserId);
+            pi.ActiveGame.id = 1;
+            pi.ActiveGame.isRunning = true;
+            pi.ActiveGame.GSTA = 7;
+            pi.ActiveGame.players[0] = pi;
 
             List<Tdf> result = new List<Tdf>
             {
-                TdfInteger.Create("GID\0", pi.Game.id),
-                TdfInteger.Create("GSTA", pi.Game.GSTA)
+                TdfInteger.Create("GID\0", pi.ActiveGame.id),
+                TdfInteger.Create("GSTA", pi.ActiveGame.GSTA)
             };
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, result);
             ns.Write(buff, 0, buff.Length);
@@ -367,7 +367,7 @@ namespace CNCEmu
 
         // Work in progress implementation of getGameListSnapshot
         // Ideal journey: getGameListSnapshot >> GetGameListResponse >> NotifyGameListUpdate >> destroyGameList 
-        public static void GetGameListSnapshot(Packet p, Player pi, NetworkStream ns)
+        public static void GetGameListSnapshot(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>
             {
@@ -388,17 +388,17 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void StartMatchmaking(Packet p, Player pi, NetworkStream ns)
+        public static void StartMatchmaking(Packet p, User pi, NetworkStream ns)
         {
-            Player srv = BlazeServer.GetServerInfo();
+            User srv = BlazeServer.GetServerInfo();
             if (srv == null)
             {
                 BlazeServer.Log("[CLNT] #" + pi.UserId + " : cant find game to join!", System.Drawing.Color.OrangeRed);
                 return;
             }
-            pi.Game = srv.Game;
-            pi.Slot = srv.Game.GetNextSlot();
-            srv.Game.SetNextSlot((int)pi.UserId);
+            pi.ActiveGame = srv.ActiveGame;
+            pi.Slot = srv.ActiveGame.GetNextSlot();
+            srv.ActiveGame.SetNextSlot((int)pi.UserId);
 
             List<Tdf> result = new List<Tdf>
             {
@@ -461,7 +461,7 @@ namespace CNCEmu
             srv.NetworkStream.Flush();
         }
 
-        public static void DestroyGame(Packet p, Player pi, NetworkStream ns)
+        public static void DestroyGame(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>
             {
@@ -472,15 +472,15 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void SetGameAttributes(Packet p, Player pi, NetworkStream ns)
+        public static void SetGameAttributes(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> input = Blaze.ReadPacketContent(p);
-            pi.Game.ATTR = (TdfDoubleList)input[0];
+            pi.ActiveGame.ATTR = (TdfDoubleList)input[0];
             List<Tdf> result = new List<Tdf>();
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, result);
             ns.Write(buff, 0, buff.Length);
 
-            foreach (Player peer in pi.Game.players)
+            foreach (User peer in pi.ActiveGame.players)
             {
                 if (peer != null)
                     try
@@ -493,7 +493,7 @@ namespace CNCEmu
                     }
                     catch
                     {
-                        pi.Game.RemovePlayer((int)peer.UserId);
+                        pi.ActiveGame.RemovePlayer((int)peer.UserId);
                         BlazeServer.Log("[CLNT] #" + pi.UserId + " : 'SetGameAttributes' peer crashed!", System.Drawing.Color.Red);
                     }
             }
@@ -501,28 +501,28 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void JoinGame(Packet p, Player pi, NetworkStream ns)
+        public static void JoinGame(Packet p, User pi, NetworkStream ns)
         {
-            Player srv = BlazeServer.GetServerInfo();
+            User srv = BlazeServer.GetServerInfo();
             if (srv == null)
             {
                 BlazeServer.Log("[CLNT] #" + pi.UserId + " : cant find game to join!", System.Drawing.Color.OrangeRed);
                 return;
             }
-            pi.Game = srv.Game;
-            pi.Slot = srv.Game.GetNextSlot();
+            pi.ActiveGame = srv.ActiveGame;
+            pi.Slot = srv.ActiveGame.GetNextSlot();
             BlazeServer.Log("[CLNT] #" + pi.UserId + " : assigned Slot Id " + pi.Slot, System.Drawing.Color.Blue);
             if (pi.Slot == 255)
             {
                 BlazeServer.Log("[CLNT] #" + pi.UserId + " : server full!", System.Drawing.Color.OrangeRed);
                 return;
             }
-            srv.Game.SetNextSlot((int)pi.UserId);
-            srv.Game.players[pi.Slot] = pi;
+            srv.ActiveGame.SetNextSlot((int)pi.UserId);
+            srv.ActiveGame.players[pi.Slot] = pi;
 
             List<Tdf> result = new List<Tdf>
             {
-                TdfInteger.Create("GID\0", srv.Game.id),
+                TdfInteger.Create("GID\0", srv.ActiveGame.id),
                 TdfInteger.Create("JGS\0", 0)
             };
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, result);
@@ -582,14 +582,14 @@ namespace CNCEmu
         }
 
 
-        public static void AdvanceGameState(Packet p, Player pi, NetworkStream ns)
+        public static void AdvanceGameState(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> input = Blaze.ReadPacketContent(p);
-            pi.Game.GSTA = (uint)((TdfInteger)input[1]).Value;
+            pi.ActiveGame.GSTA = (uint)((TdfInteger)input[1]).Value;
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, new List<Tdf>());
             ns.Write(buff, 0, buff.Length);
 
-            foreach (Player peer in pi.Game.players)
+            foreach (User peer in pi.ActiveGame.players)
             {
                 if (peer != null)
                 {
@@ -605,7 +605,7 @@ namespace CNCEmu
         }
 
 
-        public static void FinalizeGameCreation(Packet p, Player pi, NetworkStream ns)
+        public static void FinalizeGameCreation(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>();
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, result);
@@ -623,7 +623,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void SetPlayerTeam(Packet p, Player pi, NetworkStream ns)
+        public static void SetPlayerTeam(Packet p, User pi, NetworkStream ns)
         {
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, new List<Tdf>());
             ns.Write(buff, 0, buff.Length);

@@ -1,16 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BlazeLibWV;
-using BlazeLibWV.Models;
-using CNCEmu.Models;
+﻿using BlazeLibWV.Models;
+using System;
 
-namespace CNCEmu
+namespace CNCEmu.Models
 {
-    public class GameInfo
+    /// <summary>
+    /// Represents the game state.
+    /// </summary>
+    public class Game
     {
+        public Guid Id { get; } = Guid.NewGuid();
+
+        public User[] Players { get; } = new User[32];
+        // Other properties
+
+        [Obsolete]
         public int id;
         public bool isRunning;
 
@@ -21,11 +24,13 @@ namespace CNCEmu
         public string VSTR;
         public string GNAM;
         public int[] slotUse;
-        public Player[] players;
 
-        public GameInfo()
+        [Obsolete]
+        public User[] players;
+
+        public Game()
         {
-            players = new Player[32];
+            players = new User[32];
             slotUse = new int[32];
             for (int i = 0; i < 32; i++)
                 slotUse[i] = -1;

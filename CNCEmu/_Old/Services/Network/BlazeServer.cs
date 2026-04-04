@@ -2,6 +2,7 @@
 using CNCEmu.Constants;
 using CNCEmu.Extensions;
 using CNCEmu.Models;
+using CNCEmu.Structs;
 using CNCEmu.Utils.Logger;
 using System;
 using System.Collections.Generic;
@@ -22,7 +23,7 @@ namespace CNCEmu.Services.Network
         private readonly object _ServerStatusLock = new object();
         private readonly object _UserIdLock = new object();
         private readonly Random _Random = new Random();
-        private readonly List<Player> _PlayersInfo = new List<Player>();
+        private readonly List<User> _PlayersInfo = new List<User>();
 
         private CancellationTokenSource _TokenSource;
 
@@ -170,14 +171,14 @@ namespace CNCEmu.Services.Network
         /// <exception cref="Exception"></exception>
         private void ClientHandler(IAsyncResult ar)
         {
-            var playerInfo = default(Player);
+            var playerInfo = default(User);
             try
             {
                 var state = (State)ar.AsyncState;
                 var server = state.Server;
                 var client = server.EndAcceptTcpClient(ar);
                 var ns = client.GetStream();
-                playerInfo = new Player
+                playerInfo = new User
                 {
                     UserId = GetValidNewUserId(),
                     NetworkStream = ns,
@@ -224,13 +225,13 @@ namespace CNCEmu.Services.Network
         /// <param name="data"></param>
         /// <param name="playerInfo"></param>
         /// <param name="ns"></param>
-        public void ProcessPackets(byte[] data, Player playerInfo, NetworkStream ns)
+        public void ProcessPackets(byte[] data, User playerInfo, NetworkStream ns)
         {
             if (data == null || data.Length == 0)
                 return;
 
             if (Config.MakePacket.ToLower() == "true")
-                CNCEmu.LogService.LogPacket("CLNT", Convert.ToInt32(playerInfo.UserId), data);
+                LogService.LogPacket("CLNT", Convert.ToInt32(playerInfo.UserId), data);
 
             // Process all packets
             foreach (var packet in Blaze.FetchAllBlazePackets(new MemoryStream(data)))
@@ -305,19 +306,19 @@ namespace CNCEmu.Services.Network
         }
 
         [Obsolete]
-        public static Player GetServerInfo()
+        public static User GetServerInfo()
         {
             return BlazeServer.Instance._PlayersInfo.FirstOrDefault(p => p.IsServer);
         }
 
         [Obsolete]
-        public static Player GetPlayerById(long userId)
+        public static User GetPlayerById(long userId)
         {
             return BlazeServer.Instance._PlayersInfo.FirstOrDefault(p => p.UserId == userId);
         }
 
         [Obsolete]
-        public static List<Player> GetPlayers()
+        public static List<User> GetPlayers()
         {
             return BlazeServer.Instance._PlayersInfo;
         }

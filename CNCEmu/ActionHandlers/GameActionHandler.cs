@@ -1,7 +1,7 @@
 ﻿using CNCEmu.Enums;
 using CNCEmu.Interfaces;
 using CNCEmu.Interfaces.Repositories;
-using CNCEmu.Models;
+using CNCEmu.Structs;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
@@ -25,7 +25,7 @@ namespace CNCEmu.ActionHandlers
             _gameRepository = gameRepository;
         }
 
-        public async Task HandleActionAsync(Action action)
+        public async Task HandleActionAsync(GameAction action)
         {
             // Handle game-related actions
             var gameState = JsonConvert.DeserializeObject<GameState>(action.Data);

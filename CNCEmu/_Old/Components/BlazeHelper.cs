@@ -26,15 +26,15 @@ namespace CNCEmu
             return TdfStruct.Create(idx.ToString(), result);
         }
 
-        public static TdfStruct MakePROSEntry(int idx, Player pi)
+        public static TdfStruct MakePROSEntry(int idx, User pi)
         {
             uint t = Blaze.GetUnixTimeStamp();
             List<Tdf> result = new List<Tdf>
             {
                 TdfInteger.Create("EXID", pi.UserId),
-                TdfInteger.Create("GID\0", pi.Game.id),
+                TdfInteger.Create("GID\0", pi.ActiveGame.id),
                 TdfInteger.Create("LOC\0", pi.Loc),
-                TdfString.Create("NAME", pi.Profile.Name),
+                TdfString.Create("NAME", pi.Profile.UserName),
                 TdfInteger.Create("PID\0", pi.UserId),
                 CreateNETFieldUnion(pi, "PNET"),
                 TdfInteger.Create("SID\0", pi.Slot),
@@ -46,7 +46,7 @@ namespace CNCEmu
             return TdfStruct.Create(idx.ToString(), result);
         }
 
-        public static Tdf CreateNETField(Player pi, string label)
+        public static Tdf CreateNETField(User pi, string label)
         {
             List<TdfStruct> list = new List<TdfStruct>();
             List<Tdf> e0 = new List<Tdf>();
@@ -66,7 +66,7 @@ namespace CNCEmu
             return TdfList.Create(label, 3, 1, list);
         }
 
-        public static Tdf CreateNETFieldUnion(Player pi, string label)
+        public static Tdf CreateNETFieldUnion(User pi, string label)
         {
             List<Tdf> VALU = new List<Tdf>();
             List<Tdf> EXIP = new List<Tdf>
@@ -84,7 +84,7 @@ namespace CNCEmu
             return TdfUnion.Create(label, 2, TdfStruct.Create("VALU", VALU));
         }
 
-        public static Tdf CreateADDRField(Player pi)
+        public static Tdf CreateADDRField(User pi)
         {
             List<Tdf> ADDR = new List<Tdf>();
             List<Tdf> EXIP = new List<Tdf>
@@ -102,7 +102,7 @@ namespace CNCEmu
             return TdfStruct.Create("ADDR", ADDR, true);
         }
 
-        public static Tdf CreateNQOSField(Player pi, string label)
+        public static Tdf CreateNQOSField(User pi, string label)
         {
             List<Tdf> NQOS = new List<Tdf>
             {
@@ -113,7 +113,7 @@ namespace CNCEmu
             return TdfStruct.Create(label, NQOS);
         }
 
-        public static TdfStruct CreateUserStruct(Player pi)
+        public static TdfStruct CreateUserStruct(User pi)
         {
             List<Tdf> USER = new List<Tdf>
             {
@@ -121,12 +121,12 @@ namespace CNCEmu
                 TdfInteger.Create("ALOC", pi.Loc),
                 TdfInteger.Create("EXID\0", pi.UserId),
                 TdfInteger.Create("ID\0\0", pi.UserId),
-                TdfString.Create("NAME", pi.Profile.Name)
+                TdfString.Create("NAME", pi.Profile.UserName)
             };
             return TdfStruct.Create("USER", USER);
         }
 
-        public static Tdf CreateUserDataStruct(Player pi, string name = "DATA")
+        public static Tdf CreateUserDataStruct(User pi, string name = "DATA")
         {
             List<Tdf> DATA = new List<Tdf>
             {

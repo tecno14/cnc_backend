@@ -1,5 +1,6 @@
 ﻿using CNCEmu.Interfaces;
 using CNCEmu.Models;
+using CNCEmu.Structs;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,13 +40,13 @@ namespace CNCEmu.Services
             await client.GetStream().WriteAsync(buffer, 0, buffer.Length);
         }
 
-        private Action ParseMessage(string message)
+        private GameAction ParseMessage(string message)
         {
             // Implement message parsing logic
-            return JsonConvert.DeserializeObject<Action>(message);
+            return JsonConvert.DeserializeObject<GameAction>(message);
         }
 
-        private string CreateResponse(Action action)
+        private string CreateResponse(GameAction action)
         {
             // Implement response creation logic
             return "Action processed";

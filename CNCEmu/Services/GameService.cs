@@ -33,7 +33,7 @@ namespace CNCEmu.Services
             // Deserialize game state data
             //var gameState = JsonConvert.DeserializeObject<GameState>(gameStateData);
 
-            var gameState = new GameState
+            var gameState = new Game
             {
                 Id = gameStateDto.Id,
                 Players = gameStateDto.Players,
@@ -50,7 +50,7 @@ namespace CNCEmu.Services
         public async Task MovePlayerAsync(string playerData) // or (PlayerDto playerDto)
         {
             // Deserialize player data
-            var player = JsonConvert.DeserializeObject<Player>(playerData);
+            var player = JsonConvert.DeserializeObject<User>(playerData);
 
             // Update player state
             var gameState = _gameRepository.GetById(player.GameId);
@@ -65,12 +65,12 @@ namespace CNCEmu.Services
             }
         }
 
-        public async Task<GameState> GetGameStateAsync(Guid gameId)
+        public async Task<Game> GetGameStateAsync(Guid gameId)
         {
             return _gameRepository.GetById(gameId);
         }
 
-        public async Task<IEnumerable<GameState>> GetAllGameStatesAsync()
+        public async Task<IEnumerable<Game>> GetAllGameStatesAsync()
         {
             return _gameRepository.GetAll();
         }
@@ -80,7 +80,7 @@ namespace CNCEmu.Services
             _gameRepository.Delete(gameId);
         }
 
-        private async Task NotifyClientsAsync(GameState gameState)
+        private async Task NotifyClientsAsync(Game gameState)
         {
             // Implement client notification logic
         }
@@ -90,7 +90,7 @@ namespace CNCEmu.Services
             throw new NotImplementedException();
         }
 
-        public Task MovePlayerAsync(PlayerDto playerDto)
+        public Task MovePlayerAsync(UserDto playerDto)
         {
             throw new NotImplementedException();
         }

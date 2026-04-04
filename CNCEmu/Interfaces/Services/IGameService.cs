@@ -13,11 +13,11 @@ namespace CNCEmu.Interfaces.Services
     {
         Task StartGameAsync(GameStateDto gameStateDto);
 
-        Task MovePlayerAsync(PlayerDto playerDto);
+        Task MovePlayerAsync(UserDto playerDto);
 
-        Task<GameState> GetGameStateAsync(Guid gameId);
+        Task<Game> GetGameStateAsync(Guid gameId);
 
-        Task<IEnumerable<GameState>> GetAllGameStatesAsync();
+        Task<IEnumerable<Game>> GetAllGameStatesAsync();
 
         Task DeleteGameAsync(Guid gameId);
     }

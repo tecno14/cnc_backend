@@ -6,7 +6,7 @@ namespace CNCEmu
 {
     class UserSessionExtendedDataUpdateNotificationCommand
     {
-        public static List<Tdf> UserSessionExtendedDataUpdateNotification(Player pi)
+        public static List<Tdf> UserSessionExtendedDataUpdateNotification(User pi)
         {
             List<Tdf> Result = new List<Tdf>
             {

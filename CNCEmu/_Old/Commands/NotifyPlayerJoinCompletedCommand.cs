@@ -7,11 +7,11 @@ namespace CNCEmu
 {
     class NotifyPlayerJoinCompletedCommand
     {
-        public static List<Tdf> NotifyPlayerJoinCompleted(Player pi)
+        public static List<Tdf> NotifyPlayerJoinCompleted(User pi)
         {
             List<Tdf> Result = new List<Tdf>
             {
-                TdfInteger.Create("GID\0", pi.Game.id),
+                TdfInteger.Create("GID\0", pi.ActiveGame.id),
                 TdfInteger.Create("PID\0", pi.UserId)
             };
             return Result;

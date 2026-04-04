@@ -6,7 +6,7 @@ namespace CNCEmu
 {
     public static class AccountsComponent
     {
-        public static void HandlePacket(Packet p, Player pi, NetworkStream ns)
+        public static void HandlePacket(Packet p, User pi, NetworkStream ns)
         {
             switch (p.Command)
             {
@@ -19,7 +19,7 @@ namespace CNCEmu
             }
         }
 
-        public static void AuthLogin(Packet p, Player pi, NetworkStream ns)
+        public static void AuthLogin(Packet p, User pi, NetworkStream ns)
         {
 
         }

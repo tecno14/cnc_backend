@@ -14,7 +14,7 @@ namespace CNCEmu
 {
     public static class UtilComponent
     {
-        public static void HandlePacket(Packet p, Player pi, NetworkStream ns)
+        public static void HandlePacket(Packet p, User pi, NetworkStream ns)
         {
             switch (p.Command)
             {
@@ -39,7 +39,7 @@ namespace CNCEmu
             }
         }
 
-        public static void Ping(Packet p, Player pi, NetworkStream ns)
+        public static void Ping(Packet p, User pi, NetworkStream ns)
         {
             pi.Timeout.Restart();
             List<Tdf> Result = new List<Tdf>
@@ -51,7 +51,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void GetTelemetryServer(Packet p, Player pi, NetworkStream ns)
+        public static void GetTelemetryServer(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> Result = new List<Tdf>();
             List<Tdf> TELE = new List<Tdf>
@@ -80,7 +80,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void PreAuth(Packet p, Player pi, NetworkStream ns)
+        public static void PreAuth(Packet p, User pi, NetworkStream ns)
         {
             uint utime = Blaze.GetUnixTimeStamp();
 
@@ -91,7 +91,7 @@ namespace CNCEmu
 
             if (pi.IsServer)  //Make as a Server !
             {
-                pi.Game = new GameInfo();
+                pi.ActiveGame = new Game();
                 pi.Profile = ProfileService.Instance.ServerProfile;
                 pi.UserId = 999;
             }
@@ -205,7 +205,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void PostAuth(Packet p, Player pi, NetworkStream ns)
+        public static void PostAuth(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> Result = new List<Tdf>();
             List<Tdf> PSSList = new List<Tdf>
@@ -250,7 +250,7 @@ namespace CNCEmu
             ns.Flush();
         }
 
-        public static void SetClientMetrics(Packet p, Player pi, NetworkStream ns)
+        public static void SetClientMetrics(Packet p, User pi, NetworkStream ns)
         {
             byte[] buff = Blaze.CreatePacket(p.Component, p.Command, 0, 0x1000, p.ID, new List<Tdf>());
             ns.Write(buff, 0, buff.Length);

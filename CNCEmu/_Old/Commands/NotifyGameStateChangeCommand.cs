@@ -6,12 +6,12 @@ namespace CNCEmu
 {
     public static class NotifyGameStateChangeCommand
     {
-        public static List<Tdf> NotifyGameStateChange(Player pi)
+        public static List<Tdf> NotifyGameStateChange(User pi)
         {
             List<Tdf> Result = new List<Tdf>
             {
-                TdfInteger.Create("GID\0", pi.Game.id),
-                TdfInteger.Create("GSTA", pi.Game.GSTA)
+                TdfInteger.Create("GID\0", pi.ActiveGame.id),
+                TdfInteger.Create("GSTA", pi.ActiveGame.GSTA)
             };
             return Result;
         }

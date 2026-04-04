@@ -11,9 +11,9 @@ namespace CNCEmu.Repositories
     /// </summary>
     public class GameRepository : IGameRepository
     {
-        private readonly List<GameState> _gameStates = new List<GameState>();
+        private readonly List<Game> _gameStates = new List<Game>();
 
-        public void Save(GameState gameState)
+        public void Save(Game gameState)
         {
             var existingGameState = _gameStates.FirstOrDefault(g => g.Id == gameState.Id);
             if (existingGameState != null)
@@ -29,7 +29,7 @@ namespace CNCEmu.Repositories
             }
         }
 
-        public GameState GetById(Guid id)
+        public Game GetById(Guid id)
         {
             return _gameStates.FirstOrDefault(g => g.Id == id);
         }
@@ -43,7 +43,7 @@ namespace CNCEmu.Repositories
             }
         }
 
-        public IEnumerable<GameState> GetAll()
+        public IEnumerable<Game> GetAll()
         {
             return _gameStates;
         }

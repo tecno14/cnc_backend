@@ -6,7 +6,7 @@ namespace CNCEmu
 {
     class NotifyUserRemovedCommand
     {
-        public static List<Tdf> NotifyUserRemoved(Player pi, long pid)
+        public static List<Tdf> NotifyUserRemoved(User pi, long pid)
         {
             List<Tdf> Result = new List<Tdf>
             {

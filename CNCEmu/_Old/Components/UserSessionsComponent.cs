@@ -10,7 +10,7 @@ namespace CNCEmu
 {
     public static class UserSessionsComponent
     {
-        public static void HandlePacket(Packet p, Player pi, NetworkStream ns)
+        public static void HandlePacket(Packet p, User pi, NetworkStream ns)
         {
             switch (p.Command)
             {
@@ -25,7 +25,7 @@ namespace CNCEmu
             }
         }
 
-        public static void UpdateNetworkInfo(Packet p, Player pi, NetworkStream ns)
+        public static void UpdateNetworkInfo(Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> input = Blaze.ReadPacketContent(p);
             TdfUnion addr = (TdfUnion)input[0];

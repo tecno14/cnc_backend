@@ -9,7 +9,7 @@ namespace CNCEmu
 {
     public static class AsyncUserSessions
     {
-        public static void UserSessionExtendedDataUpdateNotification(Player src, Packet p, Player pi, NetworkStream ns)
+        public static void UserSessionExtendedDataUpdateNotification(User src, Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> Result = new List<Tdf>
             {
@@ -22,7 +22,7 @@ namespace CNCEmu
             BlazeServer.Log("[CLNT] #" + src.UserId + " [7802:0001] UserSessionExtendedDataUpdateNotification");
         }
 
-        public static void NotifyUserAdded(Player src, Packet p, Player pi, NetworkStream ns)
+        public static void NotifyUserAdded(User src, Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>
             {
@@ -35,7 +35,7 @@ namespace CNCEmu
             BlazeServer.Log("[CLNT] #" + src.UserId + " [7802:0001] NotifyUserAdded");
         }
 
-        public static void NotifyUserRemoved(Player src, Packet p, long pid, NetworkStream ns)
+        public static void NotifyUserRemoved(User src, Packet p, long pid, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>
             {
@@ -47,7 +47,7 @@ namespace CNCEmu
             BlazeServer.Log("[CLNT] #" + src.UserId + " [7802:0001] NotifyUserRemoved");
         }
 
-        public static void NotifyUserStatus(Player src, Packet p, Player pi, NetworkStream ns)
+        public static void NotifyUserStatus(User src, Packet p, User pi, NetworkStream ns)
         {
             List<Tdf> result = new List<Tdf>
             {

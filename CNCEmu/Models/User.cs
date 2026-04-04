@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CNCEmu.Enums;
+using System;
 using System.Diagnostics;
 using System.Net.Sockets;
 
@@ -8,23 +9,28 @@ namespace CNCEmu.Models
     /// Represents a player info in the game.
     /// reimpplement if 'PlayerInfo' class
     /// </summary>
-    public class Player
+    public class User
     {
         public Guid Id { get; set; }
 
+        public UserRole Role { get; set; }
+
+        [Obsolete]
         public long UserId { get; set; }
 
+        [Obsolete]
+        public bool IsServer { get; set; }
+
+        [Obsolete]
         public string Name { get; set; }
 
-        public GameInfo Game { get; set; }
-
-        public NetworkStream NetworkStream { get; set; }
-
-        public Profile Profile { get; set; }
+        public Game ActiveGame { get; set; } = default;
 
         public Stopwatch Timeout { get; set; }
 
-        public bool IsServer { get; set; }
+        public NetworkStream NetworkStream { get; set; }
+
+        public Account Profile { get; set; }
 
         public string Version { get; set; }
 

@@ -6,7 +6,7 @@ namespace CNCEmu
 {
     class NotifyUserAddedCommand
     {
-        public static List<Tdf> NotifyUserAdded(Player pi)
+        public static List<Tdf> NotifyUserAdded(User pi)
         {
             List<Tdf> Result = new List<Tdf>
             {
